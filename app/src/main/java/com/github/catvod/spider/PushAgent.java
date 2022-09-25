@@ -207,7 +207,6 @@ public class PushAgent extends Spider {
         }
     }
 
-
     private static String VideoDetail(String shareid, String token, String fileid) {
         int i;
         try {
@@ -322,8 +321,9 @@ public class PushAgent extends Spider {
                             if (replace.length() > 20) {
                                 replace = replace.substring(0, 10) + "..." + replace.substring(replace.length() - 10);
                             }
+                            String category = jSONObject3.getString("category");
                             String fileIds = jSONObject3.getString("file_id");
-                            map.put(replace, str + "+" + str2 + "+" + fileIds);
+                            map.put(replace, str + "+" + str2 + "+" + fileIds+ "+" + category);
                         }
                     }
                     i2++;
@@ -398,7 +398,7 @@ public class PushAgent extends Spider {
             jSONObject6.put("vod_name", string3);
             jSONObject6.put("vod_pic", jSONObject3.getString("avatar"));
             jSONObject6.put("vod_content", url);
-            jSONObject6.put("vod_play_from", "AliYun");
+            jSONObject6.put("vod_play_from", "AliYun$$$原画");
             ArrayList arrayList = new ArrayList();
             String string4 = jSONObject4.getString("type");
             if (!string4.equals("folder")) {
@@ -424,12 +424,15 @@ public class PushAgent extends Spider {
                 }
                 String str3 = (String) it.next();
                 String sb4 = str3 + "$" + hashMap.get(str3);
+                String sb5 = str3 + "$" + hashMap.get(str3);
                 arrayList.add(sb4);
             }
             ArrayList arrayList3 = new ArrayList();
             for (int i2 = 0; i2 < 4; i2++) {
                 String join = TextUtils.join("#", arrayList);
+                String join4 = TextUtils.join("#", arrayList);
                 arrayList3.add(join);
+                arrayList3.add(join4);
             }
             String join2 = TextUtils.join("$$$", arrayList3);
             jSONObject6.put("vod_play_url", join2);
@@ -633,9 +636,29 @@ public class PushAgent extends Spider {
                     result.put("url", id);
                     return result.toString();
                 }
+                case "原画": {
+                    refreshTk();
+                    String[] split = id.split("\\+");
+                    String DownLoadUrl = downLoadUrl(split[0], split[1], split[2], split[3]);
+                    HashMap hashMap = new HashMap();
+                    OkHttpUtil.stringNoRedirect(DownLoadUrl,Headers(),hashMap);
+                    String url= OkHttpUtil.getRedirectLocation(hashMap);
+                    JSONObject jSONObject4 = new JSONObject();
+                    jSONObject4.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.54 Safari/537.36");
+                    jSONObject4.put("Referer", "https://www.aliyundrive.com/");
+                    JSONObject jSONObject = new JSONObject();
+                    jSONObject.put("parse", "0");
+                    jSONObject.put("playUrl", "");
+                    jSONObject.put("url", url);
+                    jSONObject.put("header",jSONObject4.toString());
+                    return jSONObject.toString();
+                }
                 case "AliYun":
                     refreshTk();
                     String[] split = id.split("\\+");
+
+
+                    //转码
                     String str3 = split[0];
                     String str5 = split[2];
                     String url = Proxy.localProxyUrl() + "?do=push&type=m3u8&share_id=" + str3 + "&file_id=" + str5;
@@ -652,5 +675,57 @@ public class PushAgent extends Spider {
         }
         return "";
     }
+
+    private static String downLoadUrl(String shareid, String token, String fileid, String type) {
+        try {
+            HashMap<String, String> z = Headers();
+            z.put("x-share-token", token);
+            z.put("authorization", j);
+            if (type.equals("video")) {
+                JSONObject jSONObject = new JSONObject();
+                jSONObject.put("share_id", shareid);
+                jSONObject.put("category", "live_transcoding");
+                jSONObject.put("file_id", fileid);
+                jSONObject.put("template_id", "");
+                JSONObject jSONObject2 = new JSONObject(Post("https://api.aliyundrive.com/v2/file/get_share_link_video_preview_play_info", jSONObject.toString(), z));
+                shareid = jSONObject2.getString("share_id");
+                fileid = jSONObject2.getString("file_id");
+            }
+            JSONObject jSONObject3 = new JSONObject();
+            if (type.equals("video")) {
+                jSONObject3.put("expire_sec", 600);
+                jSONObject3.put("file_id", fileid);
+                jSONObject3.put("share_id", shareid);
+            }
+            if (type.equals("audio")) {
+                jSONObject3.put("share_id", shareid);
+                jSONObject3.put("get_audio_play_info", true);
+                jSONObject3.put("file_id", fileid);
+            }
+            return new JSONObject(Post("https://api.aliyundrive.com/v2/file/get_share_link_download_url", jSONObject3.toString(), z)).getString("download_url");
+        } catch (Exception e) {
+            SpiderDebug.log(e);
+            return "";
+        }
+    }
+
+
+
+//    private static void refreshToken() {
+//        long Z = Time();
+//        if (j.isEmpty() || StopRefresh - Z <= 600) {
+//            try {
+//                JSONObject jSONObject = new JSONObject();
+//                jSONObject.put("refresh_token", Token);
+//                jSONObject.put("grant_type", "refresh_token");
+//                JSONObject jSONObject2 = new JSONObject(Post("https://auth.aliyundrive.com/v2/account/token", jSONObject.toString(), Headers()));
+//                j = jSONObject2.getString("token_type") + " " + jSONObject2.getString("access_token");
+//                StopRefresh = Z + jSONObject2.getLong("expires_in");
+//            } catch (Exception e) {
+//                SpiderDebug.log(e);
+//            }
+//        }
+//    }
+
 
 }

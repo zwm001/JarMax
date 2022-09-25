@@ -33,6 +33,17 @@ public class Kunyu77 extends Spider {
         headers.put("user-agent", uAgent);
         return headers;
     }
+    
+    private HashMap<String, String> getHeadersTK(String url) {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("user-agent", uAgent);
+        String t = String.valueOf(System.currentTimeMillis()/ 1000) ;
+        String zuhe=url+t+"XSpeUFjJ";
+        String TK=Misc.MD5(zuhe,Misc.CharsetUTF8);
+        headers.put("t",t);
+        headers.put("TK",TK);
+        return headers;
+    }
 
     @Override
     public String homeContent(boolean filter) {
@@ -224,8 +235,9 @@ public class Kunyu77 extends Spider {
     @Override
     public String detailContent(List<String> ids) {
         try {
-            String url = siteUrl + "/api.php/provide/videoDetail?ids=" + ids.get(0);
-            String content = OkHttpUtil.string(url, getHeaders(url));
+            String url = siteUrl + "/api.php/provide/videoDetail?ids=" + ids.get(0)+"&pcode=010110002&version=2.0.4";
+            String tk_path = "/api.php/provide/videoDetail" + ids.get(0)+"010110002"+"2.0.4";
+            String content = OkHttpUtil.string(url, getHeadersTK(tk_path));
             JSONObject dataObject = new JSONObject(decryptResponse(content));
             JSONObject vObj = dataObject.getJSONObject("data");
             JSONObject result = new JSONObject();
@@ -243,8 +255,9 @@ public class Kunyu77 extends Spider {
             vodAtom.put("vod_director", vObj.getString("director"));
             vodAtom.put("vod_content", vObj.getString("brief").trim());
 
-            url = siteUrl + "/api.php/provide/videoPlaylist?ids=" + ids.get(0);
-            content = OkHttpUtil.string(url, getHeaders(url));
+            url = siteUrl + "/api.php/provide/videoPlaylist?ids=" + ids.get(0)+"&pcode=010110002&version=2.0.4";
+            tk_path = "/api.php/provide/videoPlaylist" + ids.get(0)+"010110002"+"2.0.4";
+            content = OkHttpUtil.string(url, getHeadersTK(tk_path));
             JSONArray episodes = new JSONObject(content).getJSONObject("data").getJSONArray("episodes");
             LinkedHashMap<String, ArrayList<String>> playlist = new LinkedHashMap<>();
             for (int i = 0; i < episodes.length(); i++) {
@@ -293,7 +306,8 @@ public class Kunyu77 extends Spider {
             String videoUrl = id;
             try {
                 String url = siteUrl + "/api.php/provide/parserUrl?url=" + id;
-                String content = OkHttpUtil.string(url, getHeaders(url));
+                String tk_path = "/api.php/provide/parserUrl" + id;
+                String content = OkHttpUtil.string(url, getHeadersTK(tk_path));
                 JSONObject dataObj = new JSONObject(decryptResponse(content)).getJSONObject("data");
                 JSONObject playHeader = dataObj.optJSONObject("playHeader");
                 String jxUrl = dataObj.getString("url");

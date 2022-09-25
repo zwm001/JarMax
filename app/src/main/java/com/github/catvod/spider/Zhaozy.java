@@ -30,7 +30,7 @@ public class Zhaozy extends Spider {
             if (pattern.matcher(list.get(0)).find()) {
                 return pushAgent.detailContent(list);
             }
-            Matcher matcher = pattern.matcher(OkHttpUtil.string("https://zhaoziyuan.me/" + list.get(0), null));
+            Matcher matcher = pattern.matcher(OkHttpUtil.string("https://zhaoziyuan.la/" + list.get(0), null));
             if (!matcher.find()) {
                 return "";
             }

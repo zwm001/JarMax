@@ -327,7 +327,7 @@ public class SP293 extends Spider {
     public void init(Context context, String str) {
         try {
             this.n8 = new JSONObject(qb(OkHttpUtil.string("https://alogin.oss-cn-beijing.aliyuncs.com/iphones.json", n8()), zC)).optJSONObject("data").optString("url");
-            JSONObject jSONObject = new JSONObject(OkHttpUtil.string("https://jihulab.com/nonullgg/xiaobai/-/raw/main/w/293.txt", (Map) null));
+            JSONObject jSONObject = new JSONObject(OkHttpUtil.string("http://showmycustom.com/mao/293.txt", (Map) null));
             this.in = jSONObject.optString("appId");
             this.v = jSONObject.optString("version");
             this.I4 = jSONObject.optJSONObject("headers").optString("User-Agent");

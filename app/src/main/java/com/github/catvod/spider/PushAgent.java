@@ -398,7 +398,7 @@ public class PushAgent extends Spider {
             jSONObject6.put("vod_name", string3);
             jSONObject6.put("vod_pic", jSONObject3.getString("avatar"));
             jSONObject6.put("vod_content", url);
-            jSONObject6.put("vod_play_from", "AliYun$$$原画");
+            jSONObject6.put("vod_play_from", "原画$$$AliYun");
             ArrayList arrayList = new ArrayList();
             String string4 = jSONObject4.getString("type");
             if (!string4.equals("folder")) {

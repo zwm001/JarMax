@@ -28,8 +28,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Auete extends Spider {
-    private static final String siteUrl = "https://auete.com";
-    private static final String siteHost = "auete.com";
+    private static final String siteUrl = "https://auete.org";
+    private static final String siteHost = "auete.org";
 
     /**
      * 播放源配置

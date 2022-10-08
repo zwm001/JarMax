@@ -36,7 +36,7 @@ import okhttp3.Response;
 
 public class XYQBiu extends Spider {
 
-    private String btcookie = "";
+//    private String btcookie = "";
 
     @Override
     public void init(Context context) {
@@ -188,7 +188,7 @@ public class XYQBiu extends Spider {
             }
             //筛选结束
             String html = null;
-            String btwatUrl = "";
+//            String btwatUrl = "";
             //取网页
             if (webUrl.contains(";post")) {
                 OKCallBack.OKCallBackString callBack = new OKCallBack.OKCallBackString() {
@@ -219,13 +219,13 @@ public class XYQBiu extends Spider {
                     OkHttpUtil.post(OkHttpUtil.defaultClient(), posturl, null, getHeaders(posturl), callBack);
                 }
                 html = convertUnicodeToCh(callBack.getResult().replaceAll("\r|\n", ""));
-                btwatUrl = posturl;
+//                btwatUrl = posturl;
             } else {
                 html = convertUnicodeToCh(fetch(webUrl));
-                btwatUrl = webUrl;
+//                btwatUrl = webUrl;
             }
 
-            html = jumpbtwaf(btwatUrl,html);//5秒盾
+//            html = jumpbtwaf(btwatUrl,html);//5秒盾
             String parseContent = html;
             String mark = "";
             String pic = "";
@@ -381,7 +381,7 @@ public class XYQBiu extends Spider {
             } else {
                 //非直接播放
                 String html = fetch(webUrl).trim();
-                html = jumpbtwaf(webUrl,html);//5秒盾
+//                html = jumpbtwaf(webUrl,html);//5秒盾
                 html = convertUnicodeToCh(html);
                 String parseContent = html;
                 boolean bfshifouercijiequ = getRuleVal("list_YN_twice").equals("1");
@@ -851,10 +851,12 @@ public class XYQBiu extends Spider {
         }
     }
 
-    protected String fetch(String webUrl) {
-        SpiderDebug.log(webUrl);
-        return OkHttpUtil.string(webUrl, getHeaders(webUrl)).replaceAll("\r|\n", "");
-    }
+//    protected String fetch(String webUrl) {
+//        SpiderDebug.log(webUrl);
+//        return OkHttpUtil.string(webUrl, getHeaders(webUrl)).replaceAll("\r|\n", "");        
+        
+//    }
+    
 
     private static String convertUnicodeToCh(String str) {
         Pattern pattern = Pattern.compile("(\\\\u(\\w{4}))");
@@ -970,8 +972,22 @@ public class XYQBiu extends Spider {
         return null;
     }
 
-    private String jumpbtwaf(String webUrl, String html) {
-        for (int i = 0; i < 3; i++) {
+    
+    protected String fetch(String webUrl) {
+        String html = OkHttpUtil.string(webUrl, getHeaders(webUrl));
+        html = this.jumpbtwaf(webUrl, html);
+        return html.replaceAll("<!--.+?-->", "").replace("\r\n","").replace("\n","");  // 移除注释
+    }
+
+    protected String jumpbtwaf(String webUrl, String html) {
+
+        try {
+            // 没有配置btwaf不执行下面的代码
+            if (!rule.optBoolean("btwaf", false)) {
+                return html;
+            }
+            
+         for (int i = 0; i < 3; i++) {
             if (html.contains("检测中") && html.contains("跳转中") && html.contains("btwaf")) {
                 String btwaf = subContent(html, "btwaf=", "\"").get(0);
                 String bturl = webUrl + "?btwaf=" + btwaf;
@@ -980,16 +996,25 @@ public class XYQBiu extends Spider {
                 OkHttpUtil.string(bturl, getHeaders(webUrl), cookies);
                 for (Map.Entry<String, List<String>> entry : cookies.entrySet()) {
                     if (entry.getKey().equals("set-cookie") || entry.getKey().equals("Set-Cookie")) {
-                        btcookie = TextUtils.join(";", entry.getValue());
+                        String btcookie = TextUtils.join(";", entry.getValue());
+                        if (!rule.has("header")) {
+                            rule.put("header", new JSONObject());
+                        }
+                        rule.getJSONObject("header").put("cookie", btcookie);
                         break;
                     }
                 }
-                html = convertUnicodeToCh(fetch(webUrl));
+                html = fetch(webUrl);
             }
             if (!html.contains("检测中") && !html.contains("btwaf")) {
                 return html;
             }
+         }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return html;
     }
+    
+    
 }

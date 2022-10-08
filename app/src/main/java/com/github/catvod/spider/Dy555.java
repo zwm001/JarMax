@@ -50,7 +50,7 @@ import okhttp3.Response;
 
 public class Dy555 extends Spider {
 
-    private static final String siteUrl = "https://www.555dianying.cc";
+    private static final String siteUrl = "https://www.555yy2.com";
 
     protected JSONObject playerConfig;
     protected JSONObject filterConfig;

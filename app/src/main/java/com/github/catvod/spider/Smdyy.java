@@ -413,7 +413,7 @@ public class Smdyy extends Spider {
                 if (scContent.startsWith("var player_")) {
                     JSONObject player = new JSONObject(scContent.substring(scContent.indexOf('{'), scContent.lastIndexOf('}') + 1));
                     if (playerConfig.has(player.getString("from"))) {
-                        JSONObject pCfg = playerConfig.getJSONObject(player.getString("from"));
+                        JSONObject pCfg ="https://player.6080kan.cc/player/"+from+".php?url="+player.getString("url");
                         //String jxurl = "https://player.tjomet.com/lgyy/?url=" + player.getString("url");
                         String jxurl = pCfg.getString("parse") + player.getString("url");
                         Document doc = Jsoup.parse(OkHttpUtil.string(jxurl, getHeaders(jxurl)));

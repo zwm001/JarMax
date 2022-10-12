@@ -20,7 +20,7 @@ public class Nmys extends XPathMacFilter {
     
     @Override
     public void init(Context context, String str) {
-        if(str.isEmpty())str="https://kimlee-cmd.github.io/nmys.json";
+        if(str.isEmpty())str="http://showmycustom.com/mao/xpath/nmys.json";
         super.init(context, str);
     }
 

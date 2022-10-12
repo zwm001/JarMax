@@ -79,7 +79,7 @@ public class Cokemv extends XPathMacFilter {
      */
 @Override
     public void init(Context context, String flag) {
-        if(flag.isEmpty())flag="https://kimlee-cmd.github.io/cokemv.json";        
+        if(flag.isEmpty())flag="http://showmycustom.com/mao/xpath/cokemv.json";        
         super.init(context, flag);
         try {
             playerConfig = new JSONObject("{\"ddzy\":{\"sh\":\"蓝光采集(暂时)\",\"pu\":\"\",\"sn\":0,\"or\":999},\"tkm3u8\":{\"sh\":\"采集路线\",\"pu\":\"\",\"sn\":0,\"or\":999},\"cokeqie01\":{\"sh\":\"極速路線\",\"pu\":\"\",\"sn\":0,\"or\":999},\"xin\":{\"sh\":\"高速路線\",\"pu\":\"\",\"sn\":0,\"or\":999},\"90mm\":{\"sh\":\"COKEMV(測試)\",\"pu\":\"\",\"sn\":0,\"or\":999},\"cokemv0555\":{\"sh\":\"COKEMV\",\"pu\":\"\",\"sn\":0,\"or\":999},\"toutiao\":{\"sh\":\"海外路線\",\"pu\":\"\",\"sn\":0,\"or\":999},\"age01\":{\"sh\":\"動漫一線\",\"pu\":\"\",\"sn\":0,\"or\":999},\"if101\":{\"sh\":\"海外(禁國內)\",\"pu\":\"\",\"sn\":0,\"or\":999},\"age02\":{\"sh\":\"動漫二線\",\"pu\":\"\",\"sn\":0,\"or\":999}}");

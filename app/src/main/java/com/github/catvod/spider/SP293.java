@@ -11,7 +11,9 @@ import com.github.catvod.utils.okhttp.OkHttpUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.net.InetAddress;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -71,11 +73,22 @@ public class SP293 extends Spider {
             "jNOnrdHJJaU5l8p99twfuKGuUC+ogNnVzRqe55b8wl8W2Cx1HEQBAkAzWKejO1OW\n" +
             "mdf+VwgUwShiRMvlNvzO7iPoyE6B4DrLM5dAMk8BN4Cyk1T/4pDfcj9FCydDk3fC\n" +
             "mtPA0DWngU6A";
-    private String host = "http://123.56.222.84:2025/";
+    private String host = "http://182.92.188.117:9099/";
     private Map<String, Set<String>> parses = new HashMap<>();
-    private String version293 = "1.3.2";
-    private String appId293 = "10000";
+    private String version293 = "2.3.1";
+    private String appId293 = "10001";
     private String ua293 = "";
+    private  String device_id="78f5500323b81sea";
+    private String ip;
+
+    {
+        try {
+            ip = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
     private HashMap<String, String> headers() {
@@ -105,7 +118,7 @@ public class SP293 extends Spider {
         JSONObject result = new JSONObject();
         try {
 
-            String resp = OkHttpUtil.string(host + "api.php/Videolast/nav?csrf=" + URLEncoder.encode(getCsrf(getTime())), null);
+            String resp = OkHttpUtil.string(host + "api.php/Videoone/nav?csrf=" + URLEncoder.encode(getCsrf(getTime())), null);
             JSONObject res = new JSONObject(decrypt(resp.replace("\\",""), PARSE_PRIVATE_KEY));
 
             JSONArray list = res.getJSONArray("data");
@@ -168,7 +181,7 @@ public class SP293 extends Spider {
     public String homeVideoContent() {
         JSONObject result = new JSONObject();
         try {
-            String url = host + "api.php/Videolast/indexVideo?"+appId293+"&csrf=" + URLEncoder.encode(getCsrf(getTime()));
+            String url = host + "api.php/Videoone/indexVideo?"+appId293+"&device_id="+device_id+"&csrf=" + URLEncoder.encode(getCsrf(getTime()));
             JSONArray list = new JSONArray();
             JSONArray data = new JSONObject(decrypt(OkHttpUtil.string(url, headers()), PARSE_PRIVATE_KEY)).getJSONArray("data");
             for (int i = 0; i < data.length(); i++) {
@@ -195,7 +208,7 @@ public class SP293 extends Spider {
         JSONObject result = new JSONObject();
         try {
             //这里有问题
-            String url = host + "api.php/Videolast/video" + "?";
+            String url = host + "api.php/Videoone/video" + "?";
             if (extend.containsKey("class")) {
                 url = url + extend.get("class");
             }
@@ -243,8 +256,9 @@ public class SP293 extends Spider {
             String csrf = getCsrf(time);
             ckObj.put("time", time);
             String ck = new String(RSA.encryptByPublicKey(csrf, REQUEST_PUBLIC_KEY));
-            String url = host + "api.php/Videolast/videoDetail?id=" + ids.get(0) + "&ck=" + URLEncoder.encode(ck) +"&version="+version293+"&appId="+appId293+ "&csrf=" + URLEncoder.encode(csrf);
+            String url = host + "api.php/Videoone/videoDetail?id=" + ids.get(0) + "&ck=" + URLEncoder.encode(ck) +"&version="+version293+"&appId="+appId293+ "&device_id="+device_id+"&csrf=" + URLEncoder.encode(csrf);
             JSONObject jsonOBJ = new JSONObject(OkHttpUtil.string(url, headers()));
+            //过滤“\"
             String json = jsonOBJ.optString("data").replace("\\","");
             JSONObject data = new JSONObject(decrypt(json,PARSE_PRIVATE_KEY)).getJSONObject("data").getJSONObject("vod_info");
             JSONObject vod = new JSONObject();
@@ -263,6 +277,7 @@ public class SP293 extends Spider {
                 JSONObject source = playList.getJSONObject(i);
                 String from = source.getString("code");
                 String urls = source.optString("url");
+              //zidonghuode"ua"
                 ua293 = source.optString("user_agent");
                 treeMap.put(from, urls);
                 JSONArray parse_api = source.optJSONArray("parse_api");
@@ -291,12 +306,12 @@ public class SP293 extends Spider {
         }
         return result.toString();
     }
-
+/*
     @Override
     public String searchContent(String key, boolean quick) {
         JSONObject result = new JSONObject();
         try {
-            String str2 = host + "api.php/Videolast/search?pg=1&text=" + URLEncoder.encode(key) + "&pg=1&csrf=" + URLEncoder.encode(getCsrf(getTime()));
+            String str2 = host + "api.php/Videonew/search?pg=1&text=" + URLEncoder.encode(key) + "&pg=1&csrf=" + URLEncoder.encode(getCsrf(getTime()));
             JSONArray jSONArray = new JSONObject(decrypt(OkHttpUtil.string(str2, headers()), PARSE_PRIVATE_KEY)).optJSONArray("data");
             JSONArray vods = new JSONArray();
             for (int i = 0; i < jSONArray.length(); i++) {
@@ -314,7 +329,29 @@ public class SP293 extends Spider {
         }
         return result.toString();
     }
-
+ */
+@Override
+public String searchContent(String key, boolean quick) {
+    JSONObject result = new JSONObject();
+    try {
+        String str2 = host + "api.php/Videoone/search?pg=1&text=" + URLEncoder.encode(key) + "&pg=1&csrf=" + URLEncoder.encode(getCsrf(getTime()));
+        JSONArray jSONArray = new JSONObject(decrypt(OkHttpUtil.string(str2, headers()), PARSE_PRIVATE_KEY)).optJSONArray("data");
+        JSONArray vods = new JSONArray();
+        for (int i = 0; i < jSONArray.length(); i++) {
+            JSONObject jSONObject = jSONArray.getJSONObject(i);
+            JSONObject vod = new JSONObject();
+            vod.put("vod_id", jSONObject.getString("vod_id"));
+            vod.put("vod_name", jSONObject.getString("vod_name"));
+            vod.put("vod_pic", jSONObject.getString("vod_pic"));
+            vod.put("vod_remarks", jSONObject.getString("vod_remarks"));
+            vods.put(vod);
+        }
+        result.put("list", vods);
+    } catch (Exception e) {
+        SpiderDebug.log(e);
+    }
+    return result.toString();
+}
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) {
         JSONObject result = new JSONObject();
@@ -327,7 +364,7 @@ public class SP293 extends Spider {
                 for (String parseUrl : parseUrls) {
                     Map<String, String> parseHeader = new HashMap<>();
                     parseHeader.put("User-Agent", ua293);
-                    String json = OkHttpUtil.string(parseUrl + id + "&appId="+appId293+"&version="+version293, parseHeader);
+                    String json = OkHttpUtil.string(parseUrl + id + "&appId="+appId293+"&version="+version293+"&device_id="+device_id, parseHeader);
                     JSONObject parseResult = new JSONObject(json);
 
                     String data = parseResult.optString("data").replace("\\","");

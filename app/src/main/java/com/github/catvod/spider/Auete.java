@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 public class Auete extends Spider {
     private static final String siteUrl = "https://auete.org";
     private static final String siteHost = "auete.org";
+    private String cookie="";
+    private String referer="";
 
     /**
      * 播放源配置
@@ -69,12 +71,29 @@ public class Auete extends Spider {
     protected HashMap<String, String> getHeaders(String url) {
         HashMap<String, String> headers = new HashMap<>();
         headers.put("method", "GET");
+//        if (!TextUtils.isEmpty(url)) {
+//            headers.put("Referer", url);
+//        }
+        headers.put("Host", siteHost);
+        headers.put("Referer", siteUrl);
+        headers.put("Upgrade-Insecure-Requests", "1");
+        headers.put("DNT", "1");
+        headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36");
+        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+        headers.put("Accept-Language", "zh-CN,zh;q=0.9");
+        return headers;
+    }
+    
+    protected HashMap<String, String> Headers(String url) {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("method", "GET");
+        headers.put("Referer", siteUrl);
         headers.put("Host", siteHost);
         headers.put("Upgrade-Insecure-Requests", "1");
         headers.put("DNT", "1");
-        headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
-        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        headers.put("Accept-Language", "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2");
+        headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36");
+        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+        headers.put("Accept-Language", "zh-CN,zh;q=0.9");
         return headers;
     }
 
@@ -119,7 +138,9 @@ public class Auete extends Spider {
             try {
                 // 取首页推荐视频列表
                 Element homeList = doc.select("ul.threadlist").get(0);
+                System.out.println("homlsit999"+homeList);
                 Elements list = homeList.select("li");
+                System.out.println("sy..."+ list);
                 JSONArray videos = new JSONArray();
                 for (int i = 0; i < list.size(); i++) {
                     Element vod = list.get(i);
@@ -498,38 +519,71 @@ public class Auete extends Spider {
      * @param quick 是否播放页的快捷搜索
      * @return
      */
+    protected HashMap<String, String> getHeaders2(String url,String ref) {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
+        if(!ref.equals("google")){
+            headers.put("Authority", "auete.org");
+            if(ref.length()>0){
+                if(ref.equals("origin")){
+                    headers.put("Origin", "https://auete.org");
+                } else {
+                    headers.put("Referer", ref);
+                }
+            }
+            if(cookie.length()>0){
+                headers.put("Cookie", cookie);
+            }
+        }
+        headers.put("Accept-Language", "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2");
+        return headers;
+    }
+    
+    protected void getCookie(){
+        cookie="";
+        String cookieurl="https://auete.org/zzzzz";
+        Map<String, List<String>> cookies = new HashMap<>();
+        OkHttpUtil.string(cookieurl,getHeaders2(cookieurl,""),cookies);
+        for( Map.Entry<String, List<String>> entry : cookies.entrySet() ){
+            if(entry.getKey().equals("set-cookie")){
+                cookie = TextUtils.join(";",entry.getValue());
+                break;
+            }
+        }
+    }
+    
     @Override
     public String searchContent(String key, boolean quick) {
         try {
-            String url = siteUrl + "/search.php?searchword=" + key;
-            Document doc = Jsoup.parse(OkHttpUtil.string(url, getHeaders(url)));
+            String url = "https://www.xn--flw351e.cf/search?q=site%3A" + siteHost + "+" + URLEncoder.encode(key);
+            Document doc = Jsoup.parse(OkHttpUtil.string(url,getHeaders2(url,"google")));
             JSONObject result = new JSONObject();
-
             JSONArray videos = new JSONArray();
-            Elements list = doc.select("div.card-body>ul>li.media");
-            for (int i = 0; i < list.size(); i++) {
-                Element vod = list.get(i);
-                String title = vod.select("div.media-body>div.subject>a>span").text();
-                String cover = "";
-                String remark = vod.selectFirst("div.media-body>div.d-flex>div.text-muted>span").text();
-                Matcher matcher = regexVid.matcher(vod.select("div.media-body>div.subject>a").attr("href"));
-                if (!matcher.find())
-                    continue;
-                String id = matcher.group(1);
-                JSONObject v = new JSONObject();
-
-                // 视频封面
-                String vodurl = siteUrl + "/" + id + "/";
-                Document voddoc = Jsoup.parse(OkHttpUtil.string(vodurl, getHeaders(vodurl)));
-                cover = voddoc.selectFirst("div.cover a").attr("href");
-
+            Elements sourceList = doc.select("div.yuRUbf a");
+            if(sourceList.size()>0){
+                for (int i = 0; i < 1; i++) {
+                    Element sourcess = sourceList.get(i);
+                    String sourceName = sourcess.select("h3.LC20lb.MBeuO.DKV0Md").text();
+                    String list1 = sourcess.attr("href");
+                    if(list1.contains("/s/")||list1.contains("play")||list1.contains("performer")||list1.contains("search")||list1.contains("jsessionid")){
+                        continue;
+                    }
+                    if (sourceName.contains(key)) {
+                        Document link = Jsoup.parse(OkHttpUtil.string(list1, getHeaders2(list1,referer)));
+                        JSONObject v = new JSONObject();
+                        Matcher matcher = regexVid.matcher(list1);
+                        if (!matcher.find()) continue;           
+                String title = link.selectFirst("div.media-body>div.subject>a>span").text();
+                String cover = link.selectFirst("div.cover a").attr("href");                                
+                String id = matcher.group(1);                
                 v.put("vod_id", id);
                 v.put("vod_name", title);
                 v.put("vod_pic", cover);
-                v.put("vod_remarks", remark);
+                v.put("vod_remarks", "");
                 videos.put(v);
             }
-
+          }
+          }
             result.put("list", videos);
             return result.toString();
         } catch (Exception e) {

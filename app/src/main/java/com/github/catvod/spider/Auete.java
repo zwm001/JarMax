@@ -573,7 +573,7 @@ public class Auete extends Spider {
                         JSONObject v = new JSONObject();
                         Matcher matcher = regexVid.matcher(list1);
                         if (!matcher.find()) continue;           
-                String title = link.selectFirst("div.media-body>div.subject>a>span").text();
+                String title = doc.selectFirst("div.cover a").attr("title");
                 String cover = link.selectFirst("div.cover a").attr("href");                                
                 String id = matcher.group(1);                
                 v.put("vod_id", id);

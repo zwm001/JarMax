@@ -32,6 +32,8 @@ import okhttp3.Headers;
 public class Nkdy extends Spider {
     private static final String siteUrl = "https://www.nkdyw.com";
     private static final String siteHost = "www.nkdyw.com";
+    private String cookie="";
+    private String referer="";
 
     /**
      * 播放源配置
@@ -50,7 +52,7 @@ public class Nkdy extends Spider {
     public void init(Context context) {
         super.init(context);
         try {
-            playerConfig = new JSONObject("{\"csm3u8\":{\"sh\":\"自建一\",\"pu\":\"\",\"sn\":0,\"or\":999},\"csyun\":{\"sh\":\"自建二\",\"pu\":\"\",\"sn\":0,\"or\":999},\"qq\":{\"sh\":\"腾讯视频\",\"pu\":\"\",\"sn\":0,\"or\":999},\"qiyi\":{\"sh\":\"奇艺视频\",\"pu\":\"\",\"sn\":0,\"or\":999},\"lzm3u8\":{\"sh\":\"第三方\",\"pu\":\"\",\"sn\":0,\"or\":999},\"gsm3u8\":{\"sh\":\"第四方\",\"pu\":\"\",\"sn\":0,\"or\":999}}");
+            playerConfig = new JSONObject("{\"csm3u8\":{\"show\":\"自建一\",\"des\":\"\",\"ps\":\"0\",\"parse\":\"https:\\/\\/zy.m3u8zy.xyz\\/nk.php?url=\"},\"csyun\":{\"show\":\"自建二\",\"des\":\"\",\"ps\":\"0\",\"parse\":\"https:\\/\\/zy.m3u8zy.xyz\\/nk.php?url=\"},\"ccsm3u8\":{\"show\":\"自建三\",\"des\":\"\",\"ps\":\"0\",\"parse\":\"https:\\/\\/op.m3u8zy.xyz\\/?url=\"},\"qq\":{\"show\":\"腾讯视频\",\"des\":\"\",\"ps\":\"1\",\"parse\":\"https:\\/\\/jx.qqqjx.com\\/?url=\"},\"qiyi\":{\"show\":\"奇艺视频\",\"des\":\"\",\"ps\":\"1\",\"parse\":\"https:\\/\\/jx.qqqjx.com\\/?url=\"},\"youku\":{\"show\":\"优酷视频\",\"des\":\"\",\"ps\":\"1\",\"parse\":\"https:\\/\\/jx.qqqjx.com\\/?url=\"},\"mgtv\":{\"show\":\"芒果视频\",\"des\":\"\",\"ps\":\"1\",\"parse\":\"https:\\/\\/jx.qqqjx.com\\/?url=\"},\"bilibili\":{\"show\":\"B站\",\"des\":\"\",\"ps\":\"1\",\"parse\":\"https:\\/\\/jx.qqqjx.com\\/?url=\"},\"lzm3u8\":{\"show\":\"第三方\",\"des\":\"\",\"ps\":\"0\",\"parse\":\"https:\\/\\/jx.m3u8zy.xyz\\/nk.php?url=\"},\"gsm3u8\":{\"show\":\"第四方\",\"des\":\"\",\"ps\":\"0\",\"parse\":\"https:\\/\\/jx.m3u8zy.xyz\\/nk.php?url=\"},\"wjm3u8\":{\"show\":\"云播一\",\"des\":\"\",\"ps\":\"0\",\"parse\":\"https:\\/\\/www.lkvod.com\\/addons\\/dplayer\\/?url=\"}}");
             filterConfig = new JSONObject("{\"5\":[{\"key\":3,\"name\":\"剧情\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"喜剧\",\"v\":\"喜劇\"},{\"n\":\"爱情\",\"v\":\"愛情\"},{\"n\":\"恐怖\",\"v\":\"恐怖\"},{\"n\":\"动作\",\"v\":\"動作\"},{\"n\":\"科幻\",\"v\":\"科幻\"},{\"n\":\"剧情\",\"v\":\"劇情\"},{\"n\":\"战争\",\"v\":\"戰爭\"},{\"n\":\"犯罪\",\"v\":\"犯罪\"},{\"n\":\"动画\",\"v\":\"動畫\"},{\"n\":\"奇幻\",\"v\":\"奇幻\"},{\"n\":\"悬疑\",\"v\":\"懸疑\"},{\"n\":\"微电影\",\"v\":\"微電影\"}]},{\"key\":11,\"name\":\"年份\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"2022\",\"v\":\"2022\"},{\"n\":\"2021\",\"v\":\"2021\"},{\"n\":\"2020\",\"v\":\"2020\"},{\"n\":\"2019\",\"v\":\"2019\"},{\"n\":\"2018\",\"v\":\"2018\"},{\"n\":\"2017\",\"v\":\"2017\"},{\"n\":\"2016\",\"v\":\"2016\"},{\"n\":\"2015\",\"v\":\"2015\"},{\"n\":\"2014\",\"v\":\"2014\"},{\"n\":\"2013\",\"v\":\"2013\"},{\"n\":\"2012\",\"v\":\"2012\"},{\"n\":\"2011\",\"v\":\"2011\"},{\"n\":\"2010\",\"v\":\"2010\"}]},{\"key\":4,\"name\":\"语言\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"国语\",\"v\":\"國語\"},{\"n\":\"英语\",\"v\":\"英語\"},{\"n\":\"粤语\",\"v\":\"粵語\"},{\"n\":\"闽南语\",\"v\":\"閩南語\"},{\"n\":\"韩语\",\"v\":\"韓語\"},{\"n\":\"日语\",\"v\":\"日語\"},{\"n\":\"法语\",\"v\":\"法語\"},{\"n\":\"德语\",\"v\":\"德語\"},{\"n\":\"其它\",\"v\":\"其它\"}]},{\"key\":5,\"name\":\"字母\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"A\",\"v\":\"A\"},{\"n\":\"B\",\"v\":\"B\"},{\"n\":\"C\",\"v\":\"C\"},{\"n\":\"D\",\"v\":\"D\"},{\"n\":\"E\",\"v\":\"E\"},{\"n\":\"F\",\"v\":\"F\"},{\"n\":\"G\",\"v\":\"G\"},{\"n\":\"H\",\"v\":\"H\"},{\"n\":\"I\",\"v\":\"I\"},{\"n\":\"J\",\"v\":\"J\"},{\"n\":\"K\",\"v\":\"K\"},{\"n\":\"L\",\"v\":\"L\"},{\"n\":\"M\",\"v\":\"M\"},{\"n\":\"N\",\"v\":\"N\"},{\"n\":\"O\",\"v\":\"O\"},{\"n\":\"P\",\"v\":\"P\"},{\"n\":\"Q\",\"v\":\"Q\"},{\"n\":\"R\",\"v\":\"R\"},{\"n\":\"S\",\"v\":\"S\"},{\"n\":\"T\",\"v\":\"T\"},{\"n\":\"U\",\"v\":\"U\"},{\"n\":\"V\",\"v\":\"V\"},{\"n\":\"W\",\"v\":\"W\"},{\"n\":\"X\",\"v\":\"X\"},{\"n\":\"Y\",\"v\":\"Y\"},{\"n\":\"Z\",\"v\":\"Z\"},{\"n\":\"0-9\",\"v\":\"0-9\"}]},{\"key\":2,\"name\":\"排序\",\"value\":[{\"n\":\"时间\",\"v\":\"time\"},{\"n\":\"人气\",\"v\":\"hits\"},{\"n\":\"评分\",\"v\":\"score\"}]}],\"2\":[{\"key\":0,\"name\":\"类型\",\"value\":[{\"n\":\"全部\",\"v\":\"2\"},{\"n\":\"大陆剧\",\"v\":\"13\"},{\"n\":\"香港剧\",\"v\":\"14\"},{\"n\":\"韩国剧\",\"v\":\"15\"},{\"n\":\"欧美剧\",\"v\":\"16\"},{\"n\":\"日本剧\",\"v\":\"20\"},{\"n\":\"台湾剧\",\"v\":\"21\"},{\"n\":\"泰国剧\",\"v\":\"22\"}]},{\"key\":1,\"name\":\"地区\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"中国大陆\",\"v\":\"中国大陆\"},{\"n\":\"韩国\",\"v\":\"韩国\"},{\"n\":\"中国香港\",\"v\":\"中国香港\"},{\"n\":\"中国台湾\",\"v\":\"中国台湾\"},{\"n\":\"日本\",\"v\":\"日本\"},{\"n\":\"美国\",\"v\":\"美国\"},{\"n\":\"泰国\",\"v\":\"泰国\"},{\"n\":\"英国\",\"v\":\"英国\"},{\"n\":\"新加坡\",\"v\":\"新加坡\"},{\"n\":\"其他\",\"v\":\"其他\"}]},{\"key\":11,\"name\":\"年份\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"2022\",\"v\":\"2022\"},{\"n\":\"2021\",\"v\":\"2021\"},{\"n\":\"2020\",\"v\":\"2020\"},{\"n\":\"2019\",\"v\":\"2019\"},{\"n\":\"2018\",\"v\":\"2018\"},{\"n\":\"2017\",\"v\":\"2017\"},{\"n\":\"2016\",\"v\":\"2016\"},{\"n\":\"2015\",\"v\":\"2015\"},{\"n\":\"2014\",\"v\":\"2014\"},{\"n\":\"2013\",\"v\":\"2013\"},{\"n\":\"2012\",\"v\":\"2012\"},{\"n\":\"2011\",\"v\":\"2011\"},{\"n\":\"2010\",\"v\":\"2010\"},{\"n\":\"2009\",\"v\":\"2009\"},{\"n\":\"2008\",\"v\":\"2008\"},{\"n\":\"2007\",\"v\":\"2007\"},{\"n\":\"2006\",\"v\":\"2006\"},{\"n\":\"2005\",\"v\":\"2005\"},{\"n\":\"2004\",\"v\":\"2004\"}]},{\"key\":4,\"name\":\"语言\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"国语\",\"v\":\"国语\"},{\"n\":\"英语\",\"v\":\"英语\"},{\"n\":\"粤语\",\"v\":\"粤语\"},{\"n\":\"闽南语\",\"v\":\"闽南语\"},{\"n\":\"韩语\",\"v\":\"韩语\"},{\"n\":\"日语\",\"v\":\"日语\"},{\"n\":\"其它\",\"v\":\"其它\"}]},{\"key\":5,\"name\":\"字母\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"A\",\"v\":\"A\"},{\"n\":\"B\",\"v\":\"B\"},{\"n\":\"C\",\"v\":\"C\"},{\"n\":\"D\",\"v\":\"D\"},{\"n\":\"E\",\"v\":\"E\"},{\"n\":\"F\",\"v\":\"F\"},{\"n\":\"G\",\"v\":\"G\"},{\"n\":\"H\",\"v\":\"H\"},{\"n\":\"I\",\"v\":\"I\"},{\"n\":\"J\",\"v\":\"J\"},{\"n\":\"K\",\"v\":\"K\"},{\"n\":\"L\",\"v\":\"L\"},{\"n\":\"M\",\"v\":\"M\"},{\"n\":\"N\",\"v\":\"N\"},{\"n\":\"O\",\"v\":\"O\"},{\"n\":\"P\",\"v\":\"P\"},{\"n\":\"Q\",\"v\":\"Q\"},{\"n\":\"R\",\"v\":\"R\"},{\"n\":\"S\",\"v\":\"S\"},{\"n\":\"T\",\"v\":\"T\"},{\"n\":\"U\",\"v\":\"U\"},{\"n\":\"V\",\"v\":\"V\"},{\"n\":\"W\",\"v\":\"W\"},{\"n\":\"X\",\"v\":\"X\"},{\"n\":\"Y\",\"v\":\"Y\"},{\"n\":\"Z\",\"v\":\"Z\"},{\"n\":\"0-9\",\"v\":\"0-9\"}]},{\"key\":2,\"name\":\"排序\",\"value\":[{\"n\":\"时间\",\"v\":\"time\"},{\"n\":\"人气\",\"v\":\"hits\"},{\"n\":\"评分\",\"v\":\"score\"}]}],\"1\":[{\"key\":0,\"name\":\"分类\",\"value\":[{\"n\":\"全部\",\"v\":\"1\"},{\"n\":\"动作片\",\"v\":\"6\"},{\"n\":\"喜剧片\",\"v\":\"7\"},{\"n\":\"爱情片\",\"v\":\"8\"},{\"n\":\"科幻片\",\"v\":\"9\"},{\"n\":\"恐怖片\",\"v\":\"10\"},{\"n\":\"剧情片\",\"v\":\"11\"},{\"n\":\"战争片\",\"v\":\"12\"},{\"n\":\"犯罪片\",\"v\":\"23\"},{\"n\":\"奇幻片\",\"v\":\"24\"},{\"n\":\"悬疑片\",\"v\":\"25\"},{\"n\":\"记录片\",\"v\":\"27\"}]},{\"key\":1,\"name\":\"地区\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"中国大陆\",\"v\":\"中国大陆\"},{\"n\":\"中国香港\",\"v\":\"中国香港\"},{\"n\":\"中国台湾\",\"v\":\"中国台湾\"},{\"n\":\"美国\",\"v\":\"美国\"},{\"n\":\"法国\",\"v\":\"法国\"},{\"n\":\"英国\",\"v\":\"英国\"},{\"n\":\"日本\",\"v\":\"日本\"},{\"n\":\"韩国\",\"v\":\"韩国\"},{\"n\":\"德国\",\"v\":\"德国\"},{\"n\":\"泰国\",\"v\":\"泰国\"},{\"n\":\"印度\",\"v\":\"印度\"},{\"n\":\"意大利\",\"v\":\"意大利\"},{\"n\":\"西班牙\",\"v\":\"西班牙\"},{\"n\":\"加拿大\",\"v\":\"加拿大\"},{\"n\":\"其他\",\"v\":\"其他\"}]},{\"key\":11,\"name\":\"年份\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"2022\",\"v\":\"2022\"},{\"n\":\"2021\",\"v\":\"2021\"},{\"n\":\"2020\",\"v\":\"2020\"},{\"n\":\"2019\",\"v\":\"2019\"},{\"n\":\"2018\",\"v\":\"2018\"},{\"n\":\"2017\",\"v\":\"2017\"},{\"n\":\"2016\",\"v\":\"2016\"},{\"n\":\"2015\",\"v\":\"2015\"},{\"n\":\"2014\",\"v\":\"2014\"},{\"n\":\"2013\",\"v\":\"2013\"},{\"n\":\"2012\",\"v\":\"2012\"},{\"n\":\"2011\",\"v\":\"2011\"},{\"n\":\"2010\",\"v\":\"2010\"}]},{\"key\":4,\"name\":\"语言\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"国语\",\"v\":\"国语\"},{\"n\":\"英语\",\"v\":\"英语\"},{\"n\":\"粤语\",\"v\":\"粤语\"},{\"n\":\"闽南语\",\"v\":\"闽南语\"},{\"n\":\"韩语\",\"v\":\"韩语\"},{\"n\":\"日语\",\"v\":\"日语\"},{\"n\":\"法语\",\"v\":\"法语\"},{\"n\":\"德语\",\"v\":\"德语\"},{\"n\":\"其它\",\"v\":\"其它\"}]},{\"key\":5,\"name\":\"字母\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"A\",\"v\":\"A\"},{\"n\":\"B\",\"v\":\"B\"},{\"n\":\"C\",\"v\":\"C\"},{\"n\":\"D\",\"v\":\"D\"},{\"n\":\"E\",\"v\":\"E\"},{\"n\":\"F\",\"v\":\"F\"},{\"n\":\"G\",\"v\":\"G\"},{\"n\":\"H\",\"v\":\"H\"},{\"n\":\"I\",\"v\":\"I\"},{\"n\":\"J\",\"v\":\"J\"},{\"n\":\"K\",\"v\":\"K\"},{\"n\":\"L\",\"v\":\"L\"},{\"n\":\"M\",\"v\":\"M\"},{\"n\":\"N\",\"v\":\"N\"},{\"n\":\"O\",\"v\":\"O\"},{\"n\":\"P\",\"v\":\"P\"},{\"n\":\"Q\",\"v\":\"Q\"},{\"n\":\"R\",\"v\":\"R\"},{\"n\":\"S\",\"v\":\"S\"},{\"n\":\"T\",\"v\":\"T\"},{\"n\":\"U\",\"v\":\"U\"},{\"n\":\"V\",\"v\":\"V\"},{\"n\":\"W\",\"v\":\"W\"},{\"n\":\"X\",\"v\":\"X\"},{\"n\":\"Y\",\"v\":\"Y\"},{\"n\":\"Z\",\"v\":\"Z\"},{\"n\":\"0-9\",\"v\":\"0-9\"}]},{\"key\":2,\"name\":\"排序\",\"value\":[{\"n\":\"时间\",\"v\":\"time\"},{\"n\":\"人气\",\"v\":\"hits\"},{\"n\":\"评分\",\"v\":\"score\"}]}],\"4\":[{\"key\":0,\"name\":\"分类\",\"value\":[{\"n\":\"全部\",\"v\":\"4\"},{\"n\":\"动画电影\",\"v\":\"41\"}]},{\"key\":3,\"name\":\"剧情\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"情感\",\"v\":\"情感\"},{\"n\":\"科幻\",\"v\":\"科幻\"},{\"n\":\"热血\",\"v\":\"热血\"},{\"n\":\"推理\",\"v\":\"推理\"},{\"n\":\"搞笑\",\"v\":\"搞笑\"},{\"n\":\"冒险\",\"v\":\"冒险\"},{\"n\":\"萝莉\",\"v\":\"萝莉\"},{\"n\":\"校园\",\"v\":\"校园\"},{\"n\":\"动作\",\"v\":\"动作\"},{\"n\":\"机战\",\"v\":\"机战\"},{\"n\":\"运动\",\"v\":\"运动\"},{\"n\":\"战争\",\"v\":\"战争\"},{\"n\":\"少年\",\"v\":\"少年\"},{\"n\":\"少女\",\"v\":\"少女\"},{\"n\":\"社会\",\"v\":\"社会\"},{\"n\":\"原创\",\"v\":\"原创\"},{\"n\":\"亲子\",\"v\":\"亲子\"},{\"n\":\"益智\",\"v\":\"益智\"},{\"n\":\"励志\",\"v\":\"励志\"},{\"n\":\"其他\",\"v\":\"其他\"}]},{\"key\":1,\"name\":\"地区\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"大陆\",\"v\":\"大陆\"},{\"n\":\"韩国\",\"v\":\"韩国\"},{\"n\":\"中国香港\",\"v\":\"中国香港\"},{\"n\":\"中国台湾\",\"v\":\"中国台湾\"},{\"n\":\"日本\",\"v\":\"日本\"},{\"n\":\"美国\",\"v\":\"美国\"},{\"n\":\"泰国\",\"v\":\"泰国\"},{\"n\":\"英国\",\"v\":\"英国\"},{\"n\":\"新加坡\",\"v\":\"新加坡\"},{\"n\":\"其他\",\"v\":\"其他\"}]},{\"key\":11,\"name\":\"年份\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"2022\",\"v\":\"2022\"},{\"n\":\"2021\",\"v\":\"2021\"},{\"n\":\"2020\",\"v\":\"2020\"},{\"n\":\"2019\",\"v\":\"2019\"},{\"n\":\"2018\",\"v\":\"2018\"},{\"n\":\"2017\",\"v\":\"2017\"},{\"n\":\"2016\",\"v\":\"2016\"},{\"n\":\"2015\",\"v\":\"2015\"},{\"n\":\"2014\",\"v\":\"2014\"},{\"n\":\"2013\",\"v\":\"2013\"},{\"n\":\"2012\",\"v\":\"2012\"},{\"n\":\"2011\",\"v\":\"2011\"},{\"n\":\"2010\",\"v\":\"2010\"}]},{\"key\":4,\"name\":\"语言\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"国语\",\"v\":\"国语\"},{\"n\":\"英语\",\"v\":\"英语\"},{\"n\":\"粤语\",\"v\":\"粤语\"},{\"n\":\"闽南语\",\"v\":\"闽南语\"},{\"n\":\"韩语\",\"v\":\"韩语\"},{\"n\":\"日语\",\"v\":\"日语\"},{\"n\":\"其它\",\"v\":\"其它\"}]},{\"key\":5,\"name\":\"字母\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"A\",\"v\":\"A\"},{\"n\":\"B\",\"v\":\"B\"},{\"n\":\"C\",\"v\":\"C\"},{\"n\":\"D\",\"v\":\"D\"},{\"n\":\"E\",\"v\":\"E\"},{\"n\":\"F\",\"v\":\"F\"},{\"n\":\"G\",\"v\":\"G\"},{\"n\":\"H\",\"v\":\"H\"},{\"n\":\"I\",\"v\":\"I\"},{\"n\":\"J\",\"v\":\"J\"},{\"n\":\"K\",\"v\":\"K\"},{\"n\":\"L\",\"v\":\"L\"},{\"n\":\"M\",\"v\":\"M\"},{\"n\":\"N\",\"v\":\"N\"},{\"n\":\"O\",\"v\":\"O\"},{\"n\":\"P\",\"v\":\"P\"},{\"n\":\"Q\",\"v\":\"Q\"},{\"n\":\"R\",\"v\":\"R\"},{\"n\":\"S\",\"v\":\"S\"},{\"n\":\"T\",\"v\":\"T\"},{\"n\":\"U\",\"v\":\"U\"},{\"n\":\"V\",\"v\":\"V\"},{\"n\":\"W\",\"v\":\"W\"},{\"n\":\"X\",\"v\":\"X\"},{\"n\":\"Y\",\"v\":\"Y\"},{\"n\":\"Z\",\"v\":\"Z\"},{\"n\":\"0-9\",\"v\":\"0-9\"}]},{\"key\":2,\"name\":\"排序\",\"value\":[{\"n\":\"时间\",\"v\":\"time\"},{\"n\":\"人气\",\"v\":\"hits\"},{\"n\":\"评分\",\"v\":\"score\"}]}],\"3\":[{\"key\":1,\"name\":\"地区\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"中国大陆\",\"v\":\"中国大陆\"},{\"n\":\"韩国\",\"v\":\"韩国\"}]},{\"key\":11,\"name\":\"年份\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"2022\",\"v\":\"2022\"},{\"n\":\"2021\",\"v\":\"2021\"},{\"n\":\"2020\",\"v\":\"2020\"},{\"n\":\"2019\",\"v\":\"2019\"},{\"n\":\"2018\",\"v\":\"2018\"},{\"n\":\"2017\",\"v\":\"2017\"},{\"n\":\"2016\",\"v\":\"2016\"},{\"n\":\"2015\",\"v\":\"2015\"},{\"n\":\"2014\",\"v\":\"2014\"},{\"n\":\"2013\",\"v\":\"2013\"},{\"n\":\"2012\",\"v\":\"2012\"},{\"n\":\"2011\",\"v\":\"2011\"},{\"n\":\"2010\",\"v\":\"2010\"},{\"n\":\"2009\",\"v\":\"2009\"},{\"n\":\"2008\",\"v\":\"2008\"},{\"n\":\"2007\",\"v\":\"2007\"},{\"n\":\"2006\",\"v\":\"2006\"},{\"n\":\"2005\",\"v\":\"2005\"},{\"n\":\"2004\",\"v\":\"2004\"}]},{\"key\":4,\"name\":\"语言\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"国语\",\"v\":\"国语\"},{\"n\":\"英语\",\"v\":\"英语\"},{\"n\":\"粤语\",\"v\":\"粤语\"},{\"n\":\"闽南语\",\"v\":\"闽南语\"},{\"n\":\"韩语\",\"v\":\"韩语\"},{\"n\":\"日语\",\"v\":\"日语\"},{\"n\":\"其它\",\"v\":\"其它\"}]},{\"key\":5,\"name\":\"字母\",\"value\":[{\"n\":\"全部\",\"v\":\"\"},{\"n\":\"A\",\"v\":\"A\"},{\"n\":\"B\",\"v\":\"B\"},{\"n\":\"C\",\"v\":\"C\"},{\"n\":\"D\",\"v\":\"D\"},{\"n\":\"E\",\"v\":\"E\"},{\"n\":\"F\",\"v\":\"F\"},{\"n\":\"G\",\"v\":\"G\"},{\"n\":\"H\",\"v\":\"H\"},{\"n\":\"I\",\"v\":\"I\"},{\"n\":\"J\",\"v\":\"J\"},{\"n\":\"K\",\"v\":\"K\"},{\"n\":\"L\",\"v\":\"L\"},{\"n\":\"M\",\"v\":\"M\"},{\"n\":\"N\",\"v\":\"N\"},{\"n\":\"O\",\"v\":\"O\"},{\"n\":\"P\",\"v\":\"P\"},{\"n\":\"Q\",\"v\":\"Q\"},{\"n\":\"R\",\"v\":\"R\"},{\"n\":\"S\",\"v\":\"S\"},{\"n\":\"T\",\"v\":\"T\"},{\"n\":\"U\",\"v\":\"U\"},{\"n\":\"V\",\"v\":\"V\"},{\"n\":\"W\",\"v\":\"W\"},{\"n\":\"X\",\"v\":\"X\"},{\"n\":\"Y\",\"v\":\"Y\"},{\"n\":\"Z\",\"v\":\"Z\"},{\"n\":\"0-9\",\"v\":\"0-9\"}]},{\"key\":2,\"name\":\"排序\",\"value\":[{\"n\":\"时间\",\"v\":\"time\"},{\"n\":\"人气\",\"v\":\"hits\"},{\"n\":\"评分\",\"v\":\"score\"}]}]}");
         } catch (JSONException e) {
             SpiderDebug.log(e);
@@ -91,7 +93,7 @@ public class Nkdy extends Spider {
     @Override
     public String homeContent(boolean filter) {
         try {
-            Document doc = Jsoup.parse(OkHttpUtil.string(siteUrl, getHeaders(siteUrl)));
+            Document doc = Jsoup.parse(OkHttpUtil.string(siteUrl, getHeaders2(siteUrl,referer)));
             // 分类节点
             Elements elements = doc.select("ul.navbar-items>li.navbar-item>a");
             System.out.println("shouye" + elements);
@@ -101,7 +103,7 @@ public class Nkdy extends Spider {
                 boolean show = name.equals("电影") ||
                         name.equals("电视剧") ||
                         name.equals("综艺") ||
-                        name.equals("动漫") ;
+                        name.equals("动漫");
 
                 if (show) {
                     Matcher mather = regexCategory.matcher(ele.attr("href"));
@@ -176,9 +178,9 @@ public class Nkdy extends Spider {
                 }
             }
             // 获取分类数据的url
-            String url = siteUrl + "/show/" + TextUtils.join("-", urlParams)  + ".html";
+            String url = siteUrl + "/show/" + TextUtils.join("-", urlParams) + ".html";
             System.out.println("url+++" + url);
-            String html = OkHttpUtil.string(url, getHeaders(url));
+            String html = OkHttpUtil.string(url, getHeaders2(url,referer));
             Document doc = Jsoup.parse(html);
             JSONObject result = new JSONObject();
             int pageCount = 0;
@@ -261,42 +263,39 @@ public class Nkdy extends Spider {
         try {
             // 视频详情url
             String url = siteUrl + "/detail/" + ids.get(0) + ".html";
-            Document doc = Jsoup.parse(OkHttpUtil.string(url, Headers()));
+            Document doc = Jsoup.parse(OkHttpUtil.string(url,getHeaders2(url,referer)));
             JSONObject result = new JSONObject();
             JSONObject vodList = new JSONObject();
 
             // 取基本数据
-            Elements sourcediv = doc.select("div.module-main");
-            System.out.print("sourcediv++" + sourcediv);
-            String cover = sourcediv.get(0).select("div.module-item-pic>img").attr("data-original");
-            System.out.print("cover1++" + cover);
-            String title = sourcediv.get(0).select("div.module-item-pic>img").attr("alt");
-            System.out.print("title1+=" + title);
-            String category = "", area = "", year = "", remark = "", director = "", actor = "", desc = "";
-            Elements data = doc.select("div.module-info-tag-link");
-            System.out.print("data++" + data);
-            category = data.get(2).select("a").text();
-            System.out.print("cate++" + category);
-            area = data.get(1).select("a").text();
-            System.out.print("area++" + area);
-            year = data.get(0).select("a").text();
-            System.out.print("year++" + year);
-            remark = doc.select("div.module-info-item-content").get(4).text();
-            System.out.print("remark++" + remark);
-            List<String> actors = new ArrayList<>();
-            Elements aa = doc.select("div.module-info-item-content").get(2).select("a");
-            System.out.print("aa++"+ aa);
-            for (int j = 0; j < aa.size(); j++) {
-                actors.add(aa.get(j).text());
+            String cover = doc.selectFirst("div.module-item-cover div.module-item-pic > img").attr("data-original");
+            String title = doc.selectFirst("div.module-info-main div.module-info-heading > h1").text();
+            String desc = doc.selectFirst("div.module-info-item div.module-info-introduction-content > p").text().trim();
+
+
+            String category = "", area = "", year = "", director = "", actor = "";
+            category = doc.select("div.module-info-main div.module-info-heading div.module-info-tag-link").get(2).text();
+            area = doc.select("div.module-info-main div.module-info-heading div.module-info-tag-link").get(1).text();
+            year = doc.select("div.module-info-main div.module-info-heading div.module-info-tag-link").get(0).text();
+
+            Elements span_text_muted = doc.select("div.module-info-content div.module-info-items div.module-info-item");
+            for (int i = 0; i < span_text_muted.size(); i++) {
+                Element text = span_text_muted.get(i);
+                String info = text.select("span").text();
+                if (info.contains("导演")) {
+                    try {
+                        director = text.select("div > a").text();
+                    } catch (Exception e) {
+                        director = "";
+                    }
+                } else if (info.contains("主演")) {
+                    try {
+                        actor = text.select("div > a").text();
+                    } catch (Exception e) {
+                        actor = "";
+                    }
+                }
             }
-            actor = TextUtils.join(",", actors);
-            List<String> directors = new ArrayList<>();
-            Elements bb = doc.select("div.module-info-item-content").get(0).select("a");
-            for (int j = 0; j < bb.size(); j++) {
-                directors.add(bb.get(j).text());
-            }
-            director = TextUtils.join(",", directors);
-            desc = doc.selectFirst("div.module-info-introduction-content>p").text().trim();
 
             vodList.put("vod_id", ids.get(0));
             vodList.put("vod_name", title);
@@ -304,7 +303,6 @@ public class Nkdy extends Spider {
             vodList.put("type_name", category);
             vodList.put("vod_year", year);
             vodList.put("vod_area", area);
-            vodList.put("vod_remarks", remark);
             vodList.put("vod_actor", actor);
             vodList.put("vod_director", director);
             vodList.put("vod_content", desc);
@@ -327,23 +325,23 @@ public class Nkdy extends Spider {
             });*/
 
             // 取播放列表数据
-            Elements sources = doc.select("div.module-tab-items-box>div.module-tab-item>span");
-             System.out.print("sor++" + sources);
+            Elements sources = doc.select("div.module-tab-items-box>div>span");
+            System.out.print("sor++" + sources);
             Elements sourceList = doc.select("div.module-list>div.module-play-list");
             System.out.print("sor1++" + sourceList);
             for (int i = 0; i < sources.size(); i++) {
                 Element source = sources.get(i);
                 String sourceName = source.text();
-        //        boolean found = false;
+                //        boolean found = false;
                 boolean found = true;
-      //          for (Iterator<String> it = playerConfig.keys(); it.hasNext(); ) {
-     //               String flag = it.next();
-      //              if (playerConfig.getJSONObject(flag).getString("sh").equals(sourceName)) {
-      //                  sourceName = playerConfig.getJSONObject(flag).getString("sh");
-      //                  found = true;
-     //                   break;
-     //               }
-    //            }
+                //          for (Iterator<String> it = playerConfig.keys(); it.hasNext(); ) {
+                //               String flag = it.next();
+                //              if (playerConfig.getJSONObject(flag).getString("sh").equals(sourceName)) {
+                //                  sourceName = playerConfig.getJSONObject(flag).getString("sh");
+                //                  found = true;
+                //                   break;
+                //               }
+                //            }
                 if (!found)
                     continue;
                 String playList = "";
@@ -398,16 +396,16 @@ public class Nkdy extends Spider {
             //定义播放用的headers
             JSONObject headers = new JSONObject();
             //headers.put("Host", " cokemv.co");
-            headers.put("origin", " https://www.nkdyw.com");
+            //         headers.put("origin", " https://www.nkdyw.com");
             headers.put("User-Agent", " Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
-            headers.put("Accept", " */*");
-            headers.put("Accept-Language", " zh-CN,zh;q=0.9,en-US;q=0.3,en;q=0.7");
-            headers.put("Accept-Encoding", " gzip, deflate");
+            //        headers.put("Accept", " */*");
+            //         headers.put("Accept-Language", " zh-CN,zh;q=0.9,en-US;q=0.3,en;q=0.7");
+            //         headers.put("Accept-Encoding", " gzip, deflate");
 
 
             // 播放页 url
             String url = siteUrl + "/play/" + id + ".html";
-            Document doc = Jsoup.parse(OkHttpUtil.string(url, getHeaders(url)));
+            Document doc = Jsoup.parse(OkHttpUtil.string(url, getHeaders2(url,referer)));
             Elements allScript = doc.select("script");
             JSONObject result = new JSONObject();
             for (int i = 0; i < allScript.size(); i++) {
@@ -420,11 +418,29 @@ public class Nkdy extends Spider {
                     if (playerConfig.has(player.getString("from"))) {
                         JSONObject pCfg = playerConfig.getJSONObject(player.getString("from"));
                         String videoUrl = player.getString("url");
-                        String playUrl = pCfg.getString("pu");
-                        result.put("parse", pCfg.getInt("sn"));
-                        result.put("playUrl", playUrl);
-                        result.put("url", videoUrl);
-                        result.put("header", headers.toString());
+                        String playUrl = pCfg.getString("parse");
+                        if (videoUrl.contains(".m3u8")) {
+                            result.put("parse", 0);
+                            result.put("playUrl", "");
+                            result.put("url", videoUrl);
+                            result.put("header", headers.toString());
+                        } else {
+                            if (videoUrl.contains("mgtv") || videoUrl.contains("qq") || videoUrl.contains("youku") || videoUrl.contains("qiyi")) {
+
+                                result.put("parse", 1);
+                                result.put("jx", "1");
+                                result.put("url", videoUrl);
+                            } else {
+                                result.put("parse", 1);
+                                result.put("playUrl", "");
+                                result.put("url", url);
+                                result.put("ua", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.62 Safari/537.36");
+
+                            }
+
+
+                        }
+
                     }
                     break;
                 }
@@ -436,44 +452,65 @@ public class Nkdy extends Spider {
         return "";
     }
 
-    protected static HashMap<String, String> sHeaders() {
+    protected HashMap<String, String> getHeaders2(String url,String ref) {
         HashMap<String, String> headers = new HashMap<>();
-        headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.62 Safari/537.36");
-        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-        headers.put("Accept-encoding", "gzip, deflate, br");
-        headers.put("Accept-language", "zh-SG,zh;q=0.9,en-GB;q=0.8,en;q=0.7,zh-CN;q=0.6");
+        headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
+        if(!ref.equals("google")){
+            headers.put("Authority", "www.nkdyw.com");
+            if(ref.length()>0){
+                if(ref.equals("origin")){
+                    headers.put("Origin", "https://www.nkdyw.com");
+                } else {
+                    headers.put("Referer", ref);
+                }
+            }
+            if(cookie.length()>0){
+                headers.put("Cookie", cookie);
+            }
+        }
+        headers.put("Accept-Language", "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2");
         return headers;
+    }
+    
+    protected void getCookie(){
+        cookie="";
+        String cookieurl="https://www.nkdyw.com/zzzzz";
+        Map<String, List<String>> cookies = new HashMap<>();
+        OkHttpUtil.string(cookieurl,getHeaders2(cookieurl,""),cookies);
+        for( Map.Entry<String, List<String>> entry : cookies.entrySet() ){
+            if(entry.getKey().equals("set-cookie")){
+                cookie = TextUtils.join(";",entry.getValue());
+                break;
+            }
+        }
     }
 
     @Override
     public String searchContent(String key, boolean quick) {
         try {
-            String url = "https://www.google.neko25.top/search?q=site%3A" + siteHost + "+" + URLEncoder.encode(key);
-            Document doc = Jsoup.parse(OkHttpUtil.string(url, sHeaders()));
+            String url = "https://www.xn--flw351e.cf/search?q=site%3A" + siteHost + "+" + URLEncoder.encode(key);
+            Document doc = Jsoup.parse(OkHttpUtil.string(url,getHeaders2(url,"google")));
             JSONObject result = new JSONObject();
             JSONArray videos = new JSONArray();
             Elements sourceList = doc.select("div.yuRUbf a");
-            if (sourceList.size() > 0) {
-                int lengh = sourceList.size();
-                if (lengh >= 10) lengh = 10;
-                for (int i = 0; i < lengh; i++) {
+            if(sourceList.size()>0){
+                for (int i = 0; i < 1; i++) {
                     Element sourcess = sourceList.get(i);
                     String sourceName = sourcess.select("h3.LC20lb.MBeuO.DKV0Md").text();
                     String list1 = sourcess.attr("href");
-                    if (!list1.contains("voddetail")) {
+                    if(list1.contains("/s/")||list1.contains("play")||list1.contains("performer")||list1.contains("search")||list1.contains("jsessionid")){
                         continue;
                     }
                     if (sourceName.contains(key)) {
-                        Document link = Jsoup.parse(OkHttpUtil.string(list1, getHeaders(list1)));
+                        Document link = Jsoup.parse(OkHttpUtil.string(list1, getHeaders2(list1,referer)));
                         JSONObject v = new JSONObject();
                         Matcher matcher = regexVid.matcher(list1);
                         if (!matcher.find()) continue;
-                        String cover = link.select("div.module-item-pic>img").attr("data-original");
-                        String title = link.select("div.module-item-pic>img").attr("alt");
-                        String remark = link.select("div.module-info-item-content").get(3).text();
+                        String cover = link.selectFirst("div.module-item-cover div.module-item-pic > img").attr("data-original");
+            String title = link.selectFirst("div.module-info-main div.module-info-heading > h1").text();            
                         String id = matcher.group(1);
                         v.put("vod_name", title);
-                        v.put("vod_remarks", remark);
+                        v.put("vod_remarks", "");
                         v.put("vod_id", id);
                         v.put("vod_pic", cover);
                         videos.put(v);

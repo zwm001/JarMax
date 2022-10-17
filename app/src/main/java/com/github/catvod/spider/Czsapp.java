@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.Cipher;
@@ -52,8 +53,96 @@ public class Czsapp extends Spider {
     private static final Pattern M = Pattern.compile("var cip = ['\"]([^'\"]+)['\"]");
     private static final Pattern X = Pattern.compile("var time = ['\"]([^'\"]+)['\"]");
     private static final Pattern a = Pattern.compile("var url = ['\"]([^'\"]+)['\"]");
-
+    public JSONObject rule = null;
+    private String cookie="";
+    private static String btcookie="";
+    private static final String siteUrl = "https://czspp.com";    
     
+    protected String fetchUrl(String url) {
+        String html = OkHttpUtil.string(url, getHeaders(url));
+        html = this.jumpbtwaf(url, html);
+        return html.replaceAll("<!--.+?-->", "").replace("\r\n","").replace("\n","");  // 移除注释
+    }
+    
+    protected String jumpbtwaf(String webUrl, String html) {
+
+        try {           
+            if (html.contains("检测中") && html.contains("跳转中") && html.contains("btwaf")) {
+                String btwaf = subContent(html, "btwaf=", "\"").get(0);
+                String bturl = webUrl + "?btwaf=" + btwaf;
+
+                Map<String, List<String>> cookies = new HashMap<>();
+                OkHttpUtil.string(bturl, getHeaders(webUrl), cookies);
+                for (Map.Entry<String, List<String>> entry : cookies.entrySet()) {
+                    if (entry.getKey().equals("set-cookie") || entry.getKey().equals("Set-Cookie")) {
+                        String btcookie = TextUtils.join(";", entry.getValue());
+                        if (!rule.has("header")) {
+                            rule.put("header", new JSONObject());
+                        }
+                        rule.getJSONObject("header").put("cookie", btcookie);
+                        break;
+                    }
+                }
+                html = fetchUrl(webUrl);
+            }
+            if (!html.contains("检测中") && !html.contains("btwaf")) {
+                return html;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return html;
+    }
+    
+    private ArrayList<String> subContent(String content, String startFlag, String endFlag) {
+        ArrayList<String> result = new ArrayList<>();
+        if (startFlag.isEmpty() && endFlag.isEmpty()) {
+            result.add(content);
+            return result;
+        }
+        try {
+            Pattern pattern = Pattern.compile(escapeExprSpecialWord(startFlag) + "(.*?)" + escapeExprSpecialWord(endFlag));
+            Matcher matcher = pattern.matcher(content);
+            while (matcher.find()) {
+                result.add(matcher.group(1));
+            }
+        } catch (Throwable th) {
+            th.printStackTrace();
+        }
+        return result;
+    }
+    public static String escapeExprSpecialWord(String keyword) {
+        if (!keyword.isEmpty()) {
+            String[] fbsArr = {"\\", "$", "(", ")", "*", "+", ".", "[", "]", "?", "^", "{", "}", "|"};
+            for (String key : fbsArr) {
+                if (keyword.contains(key)) {
+                    keyword = keyword.replace(key, "\\" + key);
+                }
+            }
+        }
+        return keyword;
+    }
+
+
+
+    private static String convertUnicodeToCh(String str) {
+        Pattern pattern = Pattern.compile("(\\\\u(\\w{4}))");
+        Matcher matcher = pattern.matcher(str);
+
+        // 迭代，将str中的所有unicode转换为正常字符
+        while (matcher.find()) {
+            String unicodeFull = matcher.group(1); // 匹配出的每个字的unicode，比如\u67e5
+            String unicodeNum = matcher.group(2); // 匹配出每个字的数字，比如\u67e5，会匹配出67e5
+
+            // 将匹配出的数字按照16进制转换为10进制，转换为char类型，就是对应的正常字符了
+            char singleChar = (char) Integer.parseInt(unicodeNum, 16);
+
+            // 替换原始字符串中的unicode码
+            str = str.replace(unicodeFull, singleChar + "");
+        }
+        return str;
+    }
     private String mmd5(String str) {
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("MD5");
@@ -239,9 +328,12 @@ public class Czsapp extends Spider {
 
     public String homeContent(boolean z) {
         try {
+            String html=OkHttpUtil.string(siteUrl, getHeaders(siteUrl));
+            html=jumpbtwaf(siteUrl,html);
 
-            JSONObject jSONObject = new JSONObject();
-            Document doc = Jsoup.parse(OkHttpUtil.string("https://czspp.com", Headers()));
+           JSONObject jSONObject = new JSONObject();
+            Document doc = Jsoup.parse(html);
+          // Document doc = Jsoup.parse(OkHttpUtil.string("https://czspp.com", Headers()));
             Elements jS = doc.select(".navlist > li > a");
             JSONArray jSONArray = new JSONArray();
             for (Element next : jS) {
@@ -284,10 +376,16 @@ public class Czsapp extends Spider {
     protected static HashMap<String, String> Headers() {
         HashMap<String, String> hashMap = new HashMap<>();
         hashMap.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36");
+        hashMap.put("Cookie", btcookie);
         return hashMap;
     }
 
-
+    protected HashMap<String, String> getHeaders(String url) {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
+     //   headers.put("Cookie", btcookie);
+        return headers;
+    }
     public String playerContent(String str, String str2, List<String> list) {
         String str3;
         String str4;
@@ -432,4 +530,5 @@ public class Czsapp extends Spider {
             return "";
         }
     }
-}
+
+    }

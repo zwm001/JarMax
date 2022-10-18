@@ -441,25 +441,26 @@ public class Fantuan extends Spider {
     @Override
     public String searchContent(String key, boolean quick) {
         try {
-            long currentTime = System.currentTimeMillis();
-            String url = siteUrl + "/index.php/ajax/suggest?mid=1&wd=" + URLEncoder.encode(key) + "&limit=10&timestamp=" + currentTime;
-            JSONObject searchResult = new JSONObject(OkHttpUtil.string(url, getHeaders(url)));
+            String url = siteUrl + "/search/wd/" + URLEncoder.encode(key) + ".html";
+            Document docs = Jsoup.parse(OkHttpUtil.string(url, getHeaders(url)));
             JSONObject result = new JSONObject();
             JSONArray videos = new JSONArray();
-            if (searchResult.getInt("total") > 0) {
-                JSONArray lists = new JSONArray(searchResult.getString("list"));
-                for (int i = 0; i < lists.length(); i++) {
-                    JSONObject vod = lists.getJSONObject(i);
-                    String id = vod.getString("id");
-                    String title = vod.getString("name");
-                    String cover = vod.getString("pic");
-                    JSONObject v = new JSONObject();
-                    v.put("vod_id", id);
-                    v.put("vod_name", title);
-                    v.put("vod_pic", cover);
-                    v.put("vod_remarks", "");
-                    videos.put(v);
-                }
+            Elements list = docs.select("ul.stui-vodlist li div.stui-vodlist__box");
+            for (int i = 0; i < list.size(); i++) {
+                Element vod = list.get(i);
+                Matcher matcher = regexVid.matcher(vod.selectFirst("div.stui-vodlist__detail h4 a").attr("href"));
+                if (!matcher.find())
+                    continue;
+                String title = vod.selectFirst(".stui-vodlist__thumb").attr("title");
+                String cover = vod.selectFirst(".stui-vodlist__thumb").attr("data-original");
+                String remark = vod.selectFirst("span.pic-text").text();
+                String id = matcher.group(1);
+                JSONObject v = new JSONObject();
+                v.put("vod_id", id);
+                v.put("vod_name", title);
+                v.put("vod_pic", cover);
+                v.put("vod_remarks", remark);
+                videos.put(v);
             }
             result.put("list", videos);
             return result.toString();

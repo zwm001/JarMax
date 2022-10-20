@@ -54,6 +54,17 @@ public class CBC {
             return null;
         }
     }
+   
+    
+    public static String AES_decode(String src, String key, String IV)throws Exception {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes("ASCII"), "AES");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, new IvParameterSpec(IV.getBytes()));
+        //return new String(cipher.doFinal(str, "UTF-8");
+      //  String  decodestr = new String(cipher.doFinal(Base64.decode(src.getBytes("UTF-8"))), "utf-8");
+        String  decodestr = new String(cipher.doFinal(Base64.decode(src.getBytes(), 0)));
+        return decodestr;
+    }
 
     public static byte[]  encryptbyte (byte[] data, byte[] key, byte[] iv) {
         try {

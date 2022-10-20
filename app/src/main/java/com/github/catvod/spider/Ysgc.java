@@ -184,11 +184,11 @@ public class Ysgc extends Spider {
             int pageCount = 1;
 
             // 取页码相关信息
-            Elements pageInfo = doc.select("ul.myui-page > li > a:last-child");
+            Elements pageInfo = doc.select("div[id='page'] >li >a:last-child");
             if (pageInfo.size() > 0) {
                 String href = pageInfo.attr("href");
-                href = href.substring(9, href.length() - 4);
-                String pageCountNum = href.split("-")[9];
+                href = href.substring(8, href.length() - 3);
+                String pageCountNum = href.split("-")[8];
                 if (!TextUtils.isEmpty(pageCountNum)) {
                     pageCount = Integer.parseInt(pageCountNum);
                 }
@@ -216,8 +216,8 @@ public class Ysgc extends Spider {
             }
             result.put("page", page);
             result.put("pagecount", pageCount);
-            result.put("limit", 40);
-            result.put("total", pageCount <= 1 ? videos.length() : pageCount * 40);
+            result.put("limit", 42);
+            result.put("total", pageCount <= 1 ? videos.length() : pageCount * 42);
 
             result.put("list", videos);
             return result.toString();

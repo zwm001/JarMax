@@ -40,7 +40,7 @@ public class AliPS extends Spider {
             if (pattern.matcher(list.get(0)).find()) {
                 return pushAgent.detailContent(list);
             }
-            Matcher matcher = pattern.matcher(OkHttpUtil.string("https://www.alipansou.com" + list.get(0), null));
+            Matcher matcher = pattern.matcher(OkHttpUtil.string("https://www.alipansou.com/cv" + list.get(0), null));
             if (!matcher.find()) {
                 return "";
             }

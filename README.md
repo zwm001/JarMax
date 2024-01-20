@@ -1,13 +1,12 @@
 # 猫影视TV客户端爬虫自定义接口工程
+<img src="https://camo.githubusercontent.com/f7257b93fd530ca1eb27b78dc855317273936c3e8c977f3a7dbb666cd4935829/68747470733a2f2f646172746e6f64652e636f6d2f6173736574732f646173682f696d616765732f6272616e642f66617669636f6e2e706e67" alt="icon"/>
 
+可以搭建于： https://dartnode.com/
 ```
 思维没有边界 一切皆有可能
 ```
-:rocket:[**TG交流群**](https://t.me/catvodtv_offical)
 
 本工程最终食用需配合 猫影视TV新版（一下简称为软件） **v2.0.0**及以上版本。
-
-![logo](app/src/main/res/drawable-xhdpi/app_icon.png)
 
 ### 欢迎各路大佬踊跃提PR，分享爬虫代码。
 

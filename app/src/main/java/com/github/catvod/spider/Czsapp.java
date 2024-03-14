@@ -484,7 +484,7 @@ public class Czsapp extends Spider {
     public String searchContent(String str, boolean z) {
         try {
             JSONObject jSONObject = new JSONObject();
-            Elements jS = Jsoup.parse(OkHttpUtil.string("https://czspp.com/xssearch?q=" + URLEncoder.encode(str), Headers())).select("div.mi_ne_kd > ul > li");
+            Elements jS = Jsoup.parse(OkHttpUtil.string("https://menglv.serv00.net/czzysearch.php?wd=" + URLEncoder.encode(str), Headers())).select("div.mi_ne_kd > ul > li");
             JSONArray jSONArray = new JSONArray();
             for (Element next : jS) {
                 Matcher matcher = Db.matcher(next.select("a").attr("href"));

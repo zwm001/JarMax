@@ -1,325 +1,409 @@
 package com.github.catvod.spider;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
+import android.os.SystemClock;
 import android.text.TextUtils;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
+import com.github.catvod.bean.Class;
+import com.github.catvod.bean.Filter;
+import com.github.catvod.bean.Result;
+import com.github.catvod.bean.Vod;
+import com.github.catvod.bean.bili.Dash;
+import com.github.catvod.bean.bili.Data;
+import com.github.catvod.bean.bili.Media;
+import com.github.catvod.bean.bili.Page;
+import com.github.catvod.bean.bili.Resp;
+import com.github.catvod.bean.bili.Wbi;
 import com.github.catvod.crawler.Spider;
-import com.github.catvod.crawler.SpiderDebug;
-import com.github.catvod.utils.okhttp.OKCallBack;
-import com.github.catvod.utils.okhttp.OkHttpUtil;
+import com.github.catvod.net.OkHttp;
+import com.github.catvod.utils.Notify;
+import com.github.catvod.utils.PGPath;
+import com.github.catvod.utils.QRCode;
+import com.github.catvod.utils.Json;
+import com.github.catvod.utils.ResUtil;
+import com.github.catvod.utils.Util;
+import com.github.catvod.utils.downloader.MagnetDownloader;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import okhttp3.Call;
-import okhttp3.Cookie;
-import okhttp3.CookieJar;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Response;
-
+/**
+ * @author ColaMint & FongMi & 唐三
+ */
 public class Bili extends Spider {
 
-    protected JSONObject ext = null;
-    protected static String siteUrl = "https://www.bilibili.com";
-    protected static String sitHost = "www.bilibili.com";
+    private static final String COOKIE = "buvid3=84B0395D-C9F2-C490-E92E-A09AB48FE26E71636infoc";
+    private static String cookie;
 
-    @Override
-    public void init(Context context, String extend) {
-        super.init(context, extend);
-        try {
-            String content = OkHttpUtil.string(extend, null);
-            ext = new JSONObject(content);
-        } catch (JSONException ex) {
-            ex.printStackTrace();
-        }
-    }
+    private ScheduledExecutorService service;
+    private AlertDialog dialog;
+    private JsonObject extend;
+    private boolean login;
+    private boolean isVip;
+    private Wbi wbi;
 
-    @Override
-    public String homeContent(boolean filter) {
-        JSONObject results = new JSONObject();
-        try {
-            results.put("class", ext.getJSONArray("classes"));
-            if (filter) {
-                results.put("filters", ext.getJSONObject("filter"));
-            }
-        } catch (JSONException e) {
-            SpiderDebug.log(e);
-        }
-        return results.toString();
-    }
+    private static boolean ask=false;
 
-    public static String cookie = "";
-    public static String getCookie(){
-        if(cookie.isEmpty()){
-            OKCallBack.OKCallBackDefault callBack = new OKCallBack.OKCallBackDefault() {
-                @Override
-                protected void onFailure(Call call, Exception e) {
-
-                }
-
-                @Override
-                protected void onResponse(Response response) {
-
-                }
-            };
-            OkHttpUtil.get(OkHttpUtil.defaultClient(),siteUrl,callBack);
-            List<Cookie> cookies = OkHttpUtil.cookieStore.get(sitHost);
-            cookie = TextUtils.join(";",cookies);
-        }
-        return cookie;
-    }
-
-    protected static HashMap<String, String> CookieHeaders() {
-        HashMap<String, String> headers = new HashMap<>();
-        headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36");
-        headers.put("Cookie", getCookie());
+    private static Map<String, String> getHeader() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", Util.CHROME);
+        headers.put("Referer", "https://www.bilibili.com");
+        if (cookie != null) headers.put("cookie", cookie);
         return headers;
     }
 
+    private void setCookie() {
+        cookie = extend.get("cookie").getAsString();
+        if (cookie.startsWith("http")) cookie = OkHttp.string(cookie).trim();
+        if (TextUtils.isEmpty(cookie)) {
+            for(int retry=0;retry<=3;retry++) {
+                try {
+                    cookie = PGPath.read(getCache());
+                    break;
+                }catch (Exception e){
+                    e.printStackTrace();
+                    SystemClock.sleep(1000);
+                }
+            }
+        }
+        if (TextUtils.isEmpty(cookie)) cookie = COOKIE;
+    }
+
+    private List<Filter> getFilter() {
+        List<Filter> items = new ArrayList<>();
+        items.add(new Filter("order", "排序", Arrays.asList(new Filter.Value("預設", "totalrank"), new Filter.Value("最多點擊", "click"), new Filter.Value("最新發布", "pubdate"), new Filter.Value("最多彈幕", "dm"), new Filter.Value("最多收藏", "stow"))));
+        items.add(new Filter("duration", "時長", Arrays.asList(new Filter.Value("全部時長", "0"), new Filter.Value("60分鐘以上", "4"), new Filter.Value("30~60分鐘", "3"), new Filter.Value("10~30分鐘", "2"), new Filter.Value("10分鐘以下", "1"))));
+        return items;
+    }
+
+    private static File getCache() {
+        return PGPath.tv("bilibili");
+    }
+
+    @Override
+    public void init(Context context, String extend) throws Exception {
+        this.extend = Json.safeObject(extend);
+        setCookie();
+    }
+
+    @Override
+    public String homeContent(boolean filter) throws Exception {
+        if (extend.has("json")) return OkHttp.string(extend.get("json").getAsString());
+        List<Class> classes = new ArrayList<>();
+        LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
+        String[] types = extend.get("type").getAsString().split("#");
+        for (String type : types) {
+            classes.add(new Class(type));
+            filters.put(type, getFilter());
+        }
+        return Result.string(classes, filters);
+    }
 
     @Override
     public String homeVideoContent() {
-        try {
-            JSONArray videos = new JSONArray();
-            try {
-                String url = "https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword=窗 白噪音";
-                String content = OkHttpUtil.string(url, CookieHeaders());
-                int code = new JSONObject(content).getInt("code");
-                if(code != 0){
-                    cookie = "";
-                    content = OkHttpUtil.string(url, CookieHeaders());
-                }
-                JSONObject data = new JSONObject(content).getJSONObject("data");
-                JSONArray RArray = data.getJSONArray("result");
-                for (int i = 0; i < RArray.length(); i++) {
-                    JSONObject info = RArray.getJSONObject(i);
-                    JSONObject result = new JSONObject();
-                    String pic = info.getString("pic");
-                    if (pic.startsWith("//")) {
-                        pic = "https:" + pic;
-                    }
-                    result.put("vod_id", info.getString("bvid"));
-                    String title = info.getString("title");
-                    Document KS = Jsoup.parse(title);
-                    String name = KS.text();
-                    result.put("vod_name", name);
-                    result.put("vod_pic", pic);
-                    String duration = info.getString("duration");
-                    String words = duration.split(":")[0];
-                    String remark = words + "分钟";
-                    result.put("vod_remarks", remark);
-                    videos.put(result);
-                }
-            } catch (Exception e) {
-
-            }
-            JSONObject result = new JSONObject();
-            result.put("list", videos);
-            return result.toString();
-        } catch (Throwable th) {
-
-        }
-        return "";
+        String api = "https://api.bilibili.com/x/web-interface/popular?ps=20";
+        String json = OkHttp.string(api, getHeader());
+        Resp resp = Resp.objectFrom(json);
+        List<Vod> list = new ArrayList<>();
+        for (Resp.Result item : Resp.Result.arrayFrom(resp.getData().getList())) list.add(item.getVod());
+        return Result.string(list);
     }
 
     @Override
-    public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend) {
-        try {
-            String url = "https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword=";
-            if (extend != null && extend.size() > 0 && extend.containsKey("tid") && extend.get("tid").length() > 0) {
-                url += extend.get("tid");
-            } else {
-                url += tid;
-            }
-            if (extend != null && extend.size() > 0) {
-                for (Iterator<String> it = extend.keySet().iterator(); it.hasNext(); ) {
-                    String key = it.next();
-                    String value = extend.get(key);
-                    if (value.length() > 0) {
-                        url += "&" + key + "=" + URLEncoder.encode(value);
-                    }
-                }
-            }
-            url += "&page=" + pg;
-            String content = OkHttpUtil.string(url, CookieHeaders());
-            int code = new JSONObject(content).getInt("code");
-            if(code != 0){
-                cookie = "";
-                content = OkHttpUtil.string(url, CookieHeaders());
-            }
-            JSONObject data = new JSONObject(content).getJSONObject("data");
-            JSONArray list = new JSONArray();
-            JSONArray RSArray = data.getJSONArray("result");
-            for (int i = 0; i < RSArray.length(); i++) {
-                JSONObject info = RSArray.getJSONObject(i);
-                JSONObject result = new JSONObject();
-                String pic = info.getString("pic");
-                if (pic.startsWith("//")) {
-                    pic = "https:" + pic;
-                }
-                result.put("vod_id", info.getString("bvid"));
-                String title = info.getString("title");
-                Document doc = Jsoup.parse(title);
-                String name = doc.text();
-                result.put("vod_name", name);
-                result.put("vod_pic", pic);
-                String duration = info.getString("duration");
-                String Split = duration.split(":")[0];
-                String remark = Split + "分钟";
-                result.put("vod_remarks", remark);
-                list.put(result);
-            }
-            JSONObject result = new JSONObject();
-            int limit = 20;
-            int page = Integer.parseInt(pg);
-            result.put("page", page);
-            int pageCount = list.length() == limit ? page + 1 : page;
-            result.put("pagecount", pageCount);
-            result.put("limit", limit);
-            result.put("total", Integer.MAX_VALUE);
-            result.put("list", list);
-            return result.toString();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+    public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend) throws Exception {
+        if (tid.endsWith("/{pg}")) {
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+            params.put("mid", tid.split("/")[0]);
+            params.put("pn", pg);
+            List<Vod> list = new ArrayList<>();
+            String json = OkHttp.string("https://api.bilibili.com/x/space/wbi/arc/search?" + wbi.getQuery(params), getHeader());
+            for (Resp.Result item : Resp.Result.arrayFrom(Resp.objectFrom(json).getData().getList().getAsJsonObject().get("vlist"))) list.add(item.getVod());
+            return Result.string(list);
+        } else {
+            String order = extend.containsKey("order") ? extend.get("order") : "totalrank";
+            String duration = extend.containsKey("duration") ? extend.get("duration") : "0";
+            if (extend.containsKey("tid")) tid = tid + " " + extend.get("tid");
+            String api = "https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword=" + URLEncoder.encode(tid) + "&order=" + order + "&duration=" + duration + "&page=" + pg;
+            String json = OkHttp.string(api, getHeader());
+            Resp resp = Resp.objectFrom(json);
+            List<Vod> list = new ArrayList<>();
+            for (Resp.Result item : Resp.Result.arrayFrom(resp.getData().getResult())) list.add(item.getVod());
+            return Result.string(list);
         }
     }
 
     @Override
-    public String detailContent(List<String> ids) {
-        int i = 0;
-        try {
-            String str = ids.get(0);
-            String sb2 = "https://api.bilibili.com/x/web-interface/archive/stat?bvid=" + str;
-            JSONObject jSONObject = new JSONObject(OkHttpUtil.string(sb2, null));
-            JSONObject jSONObject2 = jSONObject.getJSONObject("data");
-            long j = jSONObject2.getLong("aid");
-            String sb4 = j + "";
-            String sb6 = "https://api.bilibili.com/x/web-interface/view?aid=" + sb4;
-            JSONObject jSONObject3 = new JSONObject(OkHttpUtil.string(sb6, null));
-            JSONObject jSONObject4 = jSONObject3.getJSONObject("data");
-            JSONObject v = new JSONObject();
-            v.put("vod_id", str);
-            String string = jSONObject4.getString("title");
-            v.put("vod_name", string);
-            String string2 = jSONObject4.getString("pic");
-            v.put("vod_pic", string2);
-            String string3 = jSONObject4.getString("tname");
-            v.put("type_name", string3);
-            v.put("vod_year", "");
-            v.put("vod_area", "");
-            String sb7 = jSONObject4.getLong("duration") / 60 + "分钟";
-            v.put("vod_remarks", sb7);
-            v.put("vod_actor", "");
-            v.put("vod_director", "");
-            String string4 = jSONObject4.getString("desc");
-            v.put("vod_content", string4);
-            v.put("vod_play_from", "B站");
-            ArrayList arrayList = new ArrayList();
-            JSONArray jSONArray = jSONObject4.getJSONArray("pages");
-            while (true) {
-                int length = jSONArray.length();
-                if (i < length) {
-                    JSONObject jSONObject6 = jSONArray.getJSONObject(i);
-                    String string5 = jSONObject6.getString("part");
-                    String replace = string5.replace("$", "_").replace("#", "_");
-                    StringBuilder sb8 = new StringBuilder();
-                    sb8.append(replace);
-                    sb8.append("$");
-                    sb8.append(sb4);
-                    sb8.append("+ ");
-                    long j2 = jSONObject6.getLong("cid");
-                    sb8.append(j2);
-                    String sb9 = sb8.toString();
-                    arrayList.add(sb9);
-                    i++;
-                } else {
-                    v.put("vod_play_url", TextUtils.join("#", arrayList));
-                    JSONArray jSONArray2 = new JSONArray();
-                    jSONArray2.put(v);
-                    JSONObject jSONObject7 = new JSONObject();
-                    jSONObject7.put("list", jSONArray2);
-                    return jSONObject7.toString();
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+    public String detailContent(List<String> ids) throws Exception {
+        if (!login) checkLogin();
+
+        String[] split = ids.get(0).split("@");
+        String bvid = split[0];
+        String aid = split[1];
+
+        String api = "https://api.bilibili.com/x/web-interface/view?aid=" + aid;
+        String json = OkHttp.string(api, getHeader());
+        Data detail = Resp.objectFrom(json).getData();
+        Vod vod = new Vod();
+        vod.setVodId(ids.get(0));
+        vod.setVodPic(detail.getPic());
+        vod.setVodName(detail.getTitle());
+        vod.setTypeName(detail.getType());
+        vod.setVodContent(detail.getDesc());
+        vod.setVodDirector(detail.getOwner().getFormat());
+        vod.setVodRemarks(detail.getDuration() / 60 + "分鐘");
+
+        List<String> acceptDesc = new ArrayList<>();
+        List<Integer> acceptQuality = new ArrayList<>();
+        api = "https://api.bilibili.com/x/player/playurl?avid=" + aid + "&cid=" + detail.getCid() + "&qn=127&fnval=4048&fourk=1";
+        json = OkHttp.string(api, getHeader());
+        Data play = Resp.objectFrom(json).getData();
+        for (int i = 0; i < play.getAcceptQuality().size(); i++) {
+            int qn = play.getAcceptQuality().get(i);
+            if (!login && qn > 32) continue;
+            if (!isVip && qn > 80) continue;
+            acceptQuality.add(play.getAcceptQuality().get(i));
+            acceptDesc.add(play.getAcceptDescription().get(i));
         }
+
+        List<String> episode = new ArrayList<>();
+        LinkedHashMap<String, String> flag = new LinkedHashMap<>();
+        for (Page page : detail.getPages()) episode.add(page.getPart() + "$" + aid + "+" + page.getCid() + "+" + TextUtils.join(":", acceptQuality) + "+" + TextUtils.join(":", acceptDesc));
+        flag.put("B站", TextUtils.join("#", episode));
+
+        episode = new ArrayList<>();
+        api = "https://api.bilibili.com/x/web-interface/archive/related?bvid=" + bvid;
+        json = OkHttp.string(api, getHeader());
+        JsonArray array = Json.parse(json).getAsJsonObject().getAsJsonArray("data");
+        for (int i = 0; i < array.size(); i++) {
+            JsonObject object = array.get(i).getAsJsonObject();
+            episode.add(object.get("title").getAsString() + "$" + object.get("aid").getAsInt() + "+" + object.get("cid").getAsInt() + "+" + TextUtils.join(":", acceptQuality) + "+" + TextUtils.join(":", acceptDesc));
+        }
+        flag.put("相关", TextUtils.join("#", episode));
+
+        vod.setVodPlayFrom(TextUtils.join("$$$", flag.keySet()));
+        vod.setVodPlayUrl(TextUtils.join("$$$", flag.values()));
+        return Result.string(vod);
     }
 
     @Override
-    public String playerContent(String str, String str2, List<String> list) {
-        try {
-            String[] split = str2.split("\\+");
-            String str3 = split[0];
-            String str4 = split[1];
-            String sb2 = "https://api.bilibili.com/x/player/playurl?avid=" + str3 + "&cid= " + str4 + "&qn=120&fourk=1";
-            JSONObject jSONObject = new JSONObject(OkHttpUtil.string(sb2, null));
-            JSONObject jSONObject2 = new JSONObject();
-            jSONObject2.put("parse", "0");
-            jSONObject2.put("playUrl", "");
-            JSONObject jSONObject3 = jSONObject.getJSONObject("data");
-            JSONObject jSONObject4 = jSONObject3.getJSONArray("durl").getJSONObject(0);
-            String string = jSONObject4.getString("url");
-            jSONObject2.put("url", string);
-            jSONObject2.put("header", "{\"Referer\":\"https://www.bilibili.com\",\"User-Agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36\"}");
-            jSONObject2.put("contentType", "video/x-flv");
-            return jSONObject2.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    public String searchContent(String key, boolean quick) throws Exception {
+        return categoryContent(key, "1", true, new HashMap<>());
     }
 
     @Override
-    public String searchContent(String key, boolean quick) {
-        try {
-            JSONObject result = new JSONObject();
-            String url = "https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword=" + URLEncoder.encode(key);
-         //   String content = OkHttpUtil.string(url, null);
-            String content = OkHttpUtil.string(url, CookieHeaders());
-            JSONObject data = new JSONObject(content).getJSONObject("data");
-            JSONArray videos = new JSONArray();
-            JSONArray RSArray = data.getJSONArray("result");
-            for (int i = 0; i < RSArray.length(); i++) {
-                JSONObject info = RSArray.getJSONObject(i);
-                JSONObject v = new JSONObject();
-                String pic = info.getString("pic");
-                if (pic.startsWith("//")) {
-                    pic = "https:" + pic;
-                }
-                v.put("vod_id", info.getString("bvid"));
-                String title = info.getString("title");
-                Document doc = Jsoup.parse(title);
-                String name = doc.text();
-                v.put("vod_name", name);
-                v.put("vod_pic", pic);
-                String duration = info.getString("duration");
-                String Split = duration.split(":")[0];
-                String remark = Split + "分钟";
-                v.put("vod_remarks", remark);
-                videos.put(v);
-            }
-            result.put("list", videos);
-            return result.toString();
-        } catch (Exception e) {
-            SpiderDebug.log(e);
+    public String searchContent(String key, boolean quick, String pg) throws Exception {
+        return categoryContent(key, pg, true, new HashMap<>());
+    }
+
+    @Override
+    public String playerContent(String flag, String id, List<String> vipFlags) throws Exception {
+        MagnetDownloader.clearVodCacheWithPlayUrl(id);
+        String[] ids = id.split("\\+");
+        String aid = ids[0];
+        String cid = ids[1];
+        String[] acceptDesc = ids[3].split(":");
+        String[] acceptQuality = ids[2].split(":");
+        List<String> url = new ArrayList<>();
+        String dan = "https://api.bilibili.com/x/v1/dm/list.so?oid=".concat(cid);
+        for (int i = 0; i < acceptDesc.length; i++) {
+            url.add(acceptDesc[i]);
+            url.add(Proxy.getUrl() + "?do=bili" + "&aid=" + aid + "&cid=" + cid + "&qn=" + acceptQuality[i] + "&type=mpd");
         }
-        return "";
+        return Result.get().url(url).danmaku(dan).dash().header(getHeader()).string();
+    }
+
+    public static Object[] proxy(Map<String, String> params) {
+        String aid = params.get("aid");
+        String cid = params.get("cid");
+        String qn = params.get("qn");
+        String api = "https://api.bilibili.com/x/player/playurl?avid=" + aid + "&cid=" + cid + "&qn=" + qn + "&fnval=4048&fourk=1";
+        String json = OkHttp.string(api, getHeader());
+        Resp resp = Resp.objectFrom(json);
+        Dash dash = resp.getData().getDash();
+        StringBuilder video = new StringBuilder();
+        StringBuilder audio = new StringBuilder();
+        findAudio(dash, audio);
+        findVideo(dash, video, qn);
+        String mpd = getMpd(dash, video.toString(), audio.toString());
+        Object[] result = new Object[3];
+        result[0] = 200;
+        result[1] = "application/dash+xml";
+        result[2] = new ByteArrayInputStream(mpd.getBytes());
+        return result;
+    }
+
+    private static HashMap<String, String> getAudioFormat() {
+        HashMap<String, String> audios = new HashMap<>();
+        audios.put("30280", "192000");
+        audios.put("30232", "132000");
+        audios.put("30216", "64000");
+        return audios;
+    }
+
+    private static void findAudio(Dash dash, StringBuilder sb) {
+        for (Media audio : dash.getAudio()) {
+            for (String key : getAudioFormat().keySet()) {
+                if (audio.getId().equals(key)) {
+                    sb.append(getMedia(audio));
+                }
+            }
+        }
+    }
+
+    private static void findVideo(Dash dash, StringBuilder sb, String qn) {
+        for (Media video : dash.getVideo()) {
+            if (video.getId().equals(qn)) {
+                sb.append(getMedia(video));
+                return;
+            }
+        }
+        if (dash.getVideo().size()>0){
+            sb.append(getMedia(dash.getVideo().get(0)));
+        }
+    }
+
+    private static String getMedia(Media media) {
+        if (media.getMimeType().startsWith("video")) {
+            return getAdaptationSet(media, String.format(Locale.getDefault(), "height='%s' width='%s' frameRate='%s' sar='%s'", media.getHeight(), media.getWidth(), media.getFrameRate(), media.getSar()));
+        } else if (media.getMimeType().startsWith("audio")) {
+            return getAdaptationSet(media, String.format("numChannels='2' sampleRate='%s'", getAudioFormat().get(media.getId())));
+        } else {
+            return "";
+        }
+    }
+
+    private static String getAdaptationSet(Media media, String params) {
+        String id = media.getId() + "_" + media.getCodecId();
+        String type = media.getMimeType().split("/")[0];
+        String baseUrl = media.getBaseUrl().replace("&", "&amp;");
+        return String.format(Locale.getDefault(), "<AdaptationSet>\n" + "<ContentComponent contentType=\"%s\"/>\n" + "<Representation id=\"%s\" bandwidth=\"%s\" codecs=\"%s\" mimeType=\"%s\" %s startWithSAP=\"%s\">\n" + "<BaseURL>%s</BaseURL>\n" + "<SegmentBase indexRange=\"%s\">\n" + "<Initialization range=\"%s\"/>\n" + "</SegmentBase>\n" + "</Representation>\n" + "</AdaptationSet>", type, id, media.getBandWidth(), media.getCodecs(), media.getMimeType(), params, media.getStartWithSap(), baseUrl, media.getSegmentBase().getIndexRange(), media.getSegmentBase().getInitialization());
+    }
+
+    private static String getMpd(Dash dash, String videoList, String audioList) {
+        return String.format(Locale.getDefault(), "<MPD xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"urn:mpeg:dash:schema:mpd:2011\" xsi:schemaLocation=\"urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd\" type=\"static\" mediaPresentationDuration=\"PT%sS\" minBufferTime=\"PT%sS\" profiles=\"urn:mpeg:dash:profile:isoff-on-demand:2011\">\n" + "<Period duration=\"PT%sS\" start=\"PT0S\">\n" + "%s\n" + "%s\n" + "</Period>\n" + "</MPD>", dash.getDuration(), dash.getMinBufferTime(), dash.getDuration(), videoList, audioList);
+    }
+
+    private void checkLogin() {
+        String json = OkHttp.string("https://api.bilibili.com/x/web-interface/nav", getHeader());
+        Data data = Resp.objectFrom(json).getData();
+        login = data.isLogin();
+        isVip = data.isVip();
+        wbi = data.getWbi();
+        //getQRCode();
+        getQRCode();
+    }
+
+    private void getQRCode() {
+        if (login || ask) return;
+        ask = true;
+        String json = OkHttp.string("https://passport.bilibili.com/x/passport-login/web/qrcode/generate?source=main-mini");
+        Data data = Resp.objectFrom(json).getData();
+        Init.run(() -> openApp(data));
+    }
+
+    private Intent getIntent(String pkgName, Data data) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setClassName(pkgName, "tv.danmaku.bili.ui.intent.IntentHandlerActivity");
+        intent.setData(Uri.parse(data.getUrl()));
+        return intent;
+    }
+
+    private void openApp(Data data) {
+        try {
+            Init.getActivity().startActivity(getIntent("com.bilibili.app.in", data));
+        } catch (Exception e) {
+            showQRCode(data);
+        } finally {
+            Init.execute(() -> startService(data));
+        }
+    }
+
+    private void showQRCode(Data data) {
+        try {
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ResUtil.dp2px(240), ResUtil.dp2px(240));
+            ImageView image = new ImageView(Init.context());
+            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            image.setImageBitmap(QRCode.getBitmap(data.getUrl(), 240, 2));
+            FrameLayout frame = new FrameLayout(Init.context());
+            params.gravity = Gravity.CENTER;
+            frame.addView(image, params);
+            dialog = new AlertDialog.Builder(Init.getActivity()).setView(frame).setOnCancelListener(this::cancel).setOnDismissListener(this::dismiss).show();
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            Notify.show("請使用 BiliBili App 掃描二維碼");
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void startService(Data data) {
+        service = Executors.newScheduledThreadPool(1);
+        service.scheduleWithFixedDelay(() -> {
+            String url = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=" + data.getQrcodeKey() + "&source=main_mini";
+            String json = OkHttp.string(url, getHeader());
+            url = Resp.objectFrom(json).getData().getUrl();
+            if (url.length() > 0) setCookie(url);
+        }, 1, 1, TimeUnit.SECONDS);
+    }
+
+    private void stopService() {
+        if (service != null) service.shutdownNow();
+        Init.run(this::dismiss);
+    }
+
+    private void setCookie(String url) {
+        StringBuilder sb = new StringBuilder();
+        String[] splits = Uri.parse(url).getQuery().split("&");
+        for (String split : splits) sb.append(split).append(";");
+        PGPath.write(getCache(), cookie = sb.toString());
+        Notify.show("請重新進入播放頁");
+        stopService();
+    }
+
+    private void cancel(DialogInterface dialog) {
+        PGPath.write(getCache(), cookie = "");
+        stopService();
+    }
+
+    private void dismiss(DialogInterface dialog) {
+        stopService();
+    }
+
+    private void dismiss() {
+        try {
+            if (dialog != null) dialog.dismiss();
+        } catch (Exception ignored) {
+        }
+    }
+
+    public static String getCookie(){
+        if (!TextUtils.isEmpty(cookie)){
+            return cookie;
+        }
+        String tmpCookie = PGPath.read(getCache());
+        if (!TextUtils.isEmpty(tmpCookie)) {
+            return tmpCookie;
+        }
+        return COOKIE;
     }
 }
